@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIMTA Labs • LIMS Automation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vimta-green': '#10b981',
+                        'vimta-dark': '#064e3b',
+                        'vimta-soft': '#f0fdf4',
+                        'slate-custom': '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-radius: 1.5rem; }
+        .sidebar-item-active { background: #10b981; color: white; }
+        .sidebar-item { color: #64748b; transition: all 0.2s; }
+        .sidebar-item:hover:not(.sidebar-item-active) { background: #f1f5f9; color: #1e293b; }
+        
+        .viewfinder-hole { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 80%; height: 40%; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); 
+            border: 2px solid #10b981; border-radius: 12px; 
+        }
+        
+        input, select { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.25rem; font-weight: 600; outline: none; transition: all 0.2s; }
+        input:focus, select:focus { border-color: #10b981; background: white; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.05); }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col z-[100] h-screen sticky top-0">
+        <div class="p-8">
+            <img src="vimta_logo.png" alt="Vimta" class="h-8">
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2">
+            <button id="navDashboard" class="sidebar-item sidebar-item-active w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl font-bold text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                <span>Main Dashboard</span>
+            </button>
+            <div id="adminNav" class="hidden space-y-2 pt-4 border-t border-slate-100 mt-4">
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Administration</p>
+                <button onclick="openModal('addLabModal')" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl font-bold text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" stroke-width="2"></path></svg>
+                    <span>Manage Labs</span>
+                </button>
+                <button onclick="openModal('addMachineModal')" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl font-bold text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" stroke-width="2"></path></svg>
+                    <span>Onboard Machinery</span>
+                </button>
+                <button onclick="openModal('manageUsersModal')" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl font-bold text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <span>Manage Users</span>
+                </button>
+                <button onclick="openModal('userApprovalModal')" class="sidebar-item w-full flex items-center space-x-3 px-4 py-3.5 rounded-2xl font-bold text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Approve Users</span>
+                </button>
+            </div>
+        </nav>
+        
+        <div class="p-6 border-t border-slate-100">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-black">
+                    <span id="userInitials">V</span>
+                </div>
+                <div>
+                    <p id="userNameDisplay" class="text-sm font-bold text-slate-900 truncate max-w-[140px]">Scientist</p>
+                    <p id="userRoleDisplay" class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-0.5">Admin</p>
+                </div>
+            </div>
+            <button id="logoutBtn" class="w-full flex items-center justify-center space-x-2 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold text-xs hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <span>Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <header class="h-24 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-10 flex items-center justify-between sticky top-0 z-[50] shadow-sm">
+            <div class="flex items-center space-x-6">
+                <div class="space-y-1">
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Machine Reading Dashboard</h2>
+                    <p class="text-sm text-slate-500 font-medium">AI-Powered Laboratory Automation</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Status indicator -->
+                <div class="flex items-center space-x-3 px-6 py-3 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 shadow-sm">
+                    <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+                    <span class="text-[11px] font-black uppercase tracking-widest">System Online</span>
+                </div>
+                <!-- Quick actions -->
+                <button onclick="refreshAllData()" class="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="p-10 space-y-10">
+            <!-- Stats -->
+            <div id="adminStats" class="hidden grid grid-cols-4 gap-6">
+                <div class="group relative bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"></path>
+                            </svg>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Laboratories</p>
+                        <h4 class="statLabs text-5xl font-black text-slate-900 mb-2">0</h4>
+                        <p class="text-xs text-slate-500 font-medium">Active Facilities</p>
+                    </div>
+                </div>
+                
+                <div class="group relative bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Instruments</p>
+                        <h4 class="statMachines text-5xl font-black text-slate-900 mb-2">0</h4>
+                        <p class="text-xs text-slate-500 font-medium">Registered Units</p>
+                    </div>
+                </div>
+                
+                <div class="group relative bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Personnel</p>
+                        <h4 class="statUsers text-5xl font-black text-slate-900 mb-2">0</h4>
+                        <p class="text-xs text-slate-500 font-medium">Active Staff</p>
+                    </div>
+                </div>
+                
+                <div class="group relative bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative">
+                        <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Readings</p>
+                        <h4 class="statReadings text-5xl font-black text-slate-900 mb-2">0</h4>
+                        <p class="text-xs text-slate-500 font-medium">Total Records</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-10">
+                <!-- Column 1: Setup & Capture -->
+                <div class="col-span-5 space-y-8">
+                    <!-- Unit Selection -->
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center space-x-3 mb-8">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">Unit Selection</h3>
+                                <p class="text-xs text-slate-500 font-medium">Choose laboratory and instrument</p>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="space-y-3">
+                                <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1 flex items-center space-x-2">
+                                    <span>Laboratory Facility</span>
+                                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </label>
+                                <select id="labSelect" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all duration-300"></select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1 flex items-center space-x-2">
+                                    <span>Instrument ID</span>
+                                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </label>
+                                <select id="machineSelect" disabled class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all duration-300"></select>
+                            </div>
+                            <div id="machineSpecs" class="hidden p-6 bg-gradient-to-r from-emerald-50 to-emerald-100/50 rounded-2xl border border-emerald-200/50">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-1">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p id="machineSpecsName" class="text-sm font-black text-slate-900 mb-1"></p>
+                                        <p id="machineSpecsFields" class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capture Area -->
+                    <div class="bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center space-x-3 mb-8">
+                            <div class="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <circle cx="12" cy="13" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">Visual Capture</h3>
+                                <p class="text-xs text-slate-500 font-medium">Upload or capture machine display</p>
+                            </div>
+                        </div>
+                        <div id="captureArea" class="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden relative mb-6 border-2 border-slate-200/30">
+                            <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-slate-900/50 to-slate-800/50">
+                                <div class="w-16 h-16 bg-slate-700/50 rounded-2xl flex items-center justify-center mb-6">
+                                    <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                        <circle cx="12" cy="13" r="3"></circle>
+                                    </svg>
+                                </div>
+                                <button onclick="document.getElementById('fileInput').click()" class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-3 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 mb-4">
+                                    <span class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                        <span>Upload Image</span>
+                                    </span>
+                                </button>
+                                <button id="cameraBtn" class="text-slate-400 font-bold text-[11px] uppercase tracking-wider hover:text-emerald-500 transition-colors duration-300">
+                                    <span class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span>Use Camera</span>
+                                    </span>
+                                </button>
+                            </div>
+                            <div id="cameraView" class="hidden absolute inset-0">
+                                <video id="video" class="w-full h-full object-cover"></video>
+                                <div class="viewfinder-hole"></div>
+                                <div class="absolute bottom-6 left-0 right-0 flex justify-center space-x-4">
+                                    <button id="snapBtn" class="w-14 h-14 bg-emerald-500 rounded-full border-4 border-white shadow-2xl"></button>
+                                    <button id="closeCamBtn" class="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full text-white">✕</button>
+                                </div>
+                            </div>
+                            <div id="cropView" class="hidden absolute inset-0 bg-black">
+                                <img id="imageToCrop" src="" class="max-w-full">
+                            </div>
+                            <input type="file" id="fileInput" class="hidden" accept="image/*">
+                        </div>
+                        
+                        <div id="cropControls" class="hidden grid grid-cols-4 gap-4 mb-6">
+                            <button id="extractBtn" class="col-span-3 bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg">Analyze Display</button>
+                            <button id="resetCropBtn" class="bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl">Reset</button>
+                        </div>
+
+                        <div id="extractLoading" class="hidden p-4 bg-emerald-50 rounded-2xl flex items-center space-x-3">
+                            <div class="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-xs font-bold text-emerald-700 uppercase tracking-tight">Processing AI Vision...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Verification & Activity -->
+                <div class="col-span-7 space-y-8">
+                    <div id="verifyCard" class="bg-white rounded-3xl p-8 border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 opacity-40 pointer-events-none">
+                        <div class="flex items-center space-x-3 mb-8">
+                            <div class="w-10 h-10 bg-purple-100 rounded-2xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">Verify & Commit</h3>
+                                <p class="text-xs text-slate-500 font-medium">Review extracted values before saving</p>
+                            </div>
+                        </div>
+                        <div id="fieldsGrid" class="grid grid-cols-2 gap-6 mb-8"></div>
+                        <div class="mb-8">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider ml-1 block mb-3 flex items-center space-x-2">
+                                <span>Sample Identifier</span>
+                                <span class="text-red-500">*</span>
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            </label>
+                            <input id="sampleId" type="text" placeholder="ID-0000" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 placeholder-slate-400 focus:bg-white focus:border-purple-500 focus:outline-none transition-all duration-300">
+                        </div>
+                        <div class="flex space-x-4">
+                            <button id="saveBtn" class="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
+                                <span class="relative z-10 flex items-center justify-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2"></path>
+                                    </svg>
+                                    <span>Confirm & Sync</span>
+                                </span>
+                                <div class="absolute inset-0 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></div>
+                            </button>
+                            <button id="discardBtn" class="px-8 bg-slate-100 text-slate-400 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-colors duration-300">
+                                <span class="flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    <span>Discard</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="bg-white rounded-3xl border border-slate-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100/50 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-black text-slate-900">Recent Activity</h3>
+                                    <p class="text-xs text-slate-500 font-medium">Latest readings and extractions</p>
+                                </div>
+                            </div>
+                            <button id="refreshBtn" class="px-6 py-2 bg-emerald-50 text-emerald-600 rounded-2xl font-bold text-sm hover:bg-emerald-100 transition-colors duration-300 flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                        <div class="max-h-[400px] overflow-y-auto">
+                            <table class="w-full">
+                                <thead class="sticky top-0 bg-white text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-8 py-4 text-left">Sample ID</th>
+                                        <th class="px-8 py-4 text-left">Machine</th>
+                                        <th class="px-8 py-4 text-left">Readings</th>
+                                        <th class="px-8 py-4 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="readingsTable" class="divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    <div id="modalOverlay" class="fixed inset-0 z-[6000] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-6 hidden opacity-0 transition-opacity duration-300">
+        <!-- Signup Modal -->
+        <div id="signupModal" class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 hidden transform scale-95 transition-transform duration-300">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-8">Create Account</h2>
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                    <input id="signupName" type="text" placeholder="John Doe" class="w-full">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                    <input id="signupEmail" type="email" placeholder="john@vimta.com" class="w-full">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">User ID</label>
+                    <input id="signupUserId" type="text" placeholder="johndoe" class="w-full">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                    <input id="signupPassword" type="password" placeholder="Create a strong password" class="w-full">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                    <input id="signupConfirmPassword" type="password" placeholder="Confirm your password" class="w-full">
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button id="signupBtn" class="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-bold">Create Account</button>
+                    <button class="closeModalBtn bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Manage Users Modal -->
+        <div id="manageUsersModal" class="max-w-4xl w-full bg-white rounded-[2.5rem] shadow-2xl p-10 hidden transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-8">User Management</h2>
+            <div class="space-y-6">
+                <!-- Users Table -->
+                <div class="bg-white rounded-3xl border border-slate-200/50 shadow-sm overflow-hidden">
+                    <div class="px-8 py-6 border-b border-slate-100/50 bg-gradient-to-r from-slate-50 to-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">All Users</h3>
+                                <p class="text-xs text-slate-500 font-medium">Manage user accounts and activities</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="max-h-[400px] overflow-y-auto">
+                        <table class="w-full">
+                            <thead class="sticky top-0 bg-white text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                <tr>
+                                    <th class="px-8 py-4 text-left">User ID</th>
+                                    <th class="px-8 py-4 text-left">Name</th>
+                                    <th class="px-8 py-4 text-left">Email</th>
+                                    <th class="px-8 py-4 text-left">Role</th>
+                                    <th class="px-8 py-4 text-left">Readings</th>
+                                    <th class="px-8 py-4 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- User Activity Summary -->
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 border border-emerald-200">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-emerald-600 uppercase">Total Users</p>
+                                <p id="totalUsersCount" class="text-2xl font-black text-emerald-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-blue-600 uppercase">Active Today</p>
+                                <p id="activeUsersCount" class="text-2xl font-black text-blue-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-purple-600 uppercase">Total Readings</p>
+                                <p id="totalReadingsCount" class="text-2xl font-black text-purple-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4 pt-4">
+                    <button class="closeModalBtn bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Approval Modal -->
+        <div id="userApprovalModal" class="max-w-4xl w-full bg-white rounded-[2.5rem] shadow-2xl p-10 hidden transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-8">User Approval Management</h2>
+            <div class="space-y-6">
+                <!-- Pending Users Table -->
+                <div class="bg-white rounded-3xl border border-slate-200/50 shadow-sm overflow-hidden">
+                    <div class="px-8 py-6 border-b border-slate-100/50 bg-gradient-to-r from-amber-50 to-white">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">Pending Approvals</h3>
+                                <p class="text-xs text-slate-500 font-medium">Users waiting for account approval</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="max-h-[400px] overflow-y-auto">
+                        <table class="w-full">
+                            <thead class="sticky top-0 bg-white text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                <tr>
+                                    <th class="px-8 py-4 text-left">User ID</th>
+                                    <th class="px-8 py-4 text-left">Name</th>
+                                    <th class="px-8 py-4 text-left">Email</th>
+                                    <th class="px-8 py-4 text-left">Role</th>
+                                    <th class="px-8 py-4 text-left">Applied</th>
+                                    <th class="px-8 py-4 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingUsersTable" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4 pt-4">
+                    <button class="closeModalBtn bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Lab Modal -->
+        <div id="addLabModal" class="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-10 hidden transform scale-95 transition-transform duration-300">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-8">New Laboratory</h2>
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Facility Code</label>
+                    <input id="newLabNo" type="text" placeholder="e.g. CL08" class="w-full">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Laboratory Name</label>
+                    <input id="newLabName" type="text" placeholder="e.g. Molecular Biology" class="w-full">
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button id="saveLabBtn" class="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold">Register</button>
+                    <button class="closeModalBtn bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Machine Modal -->
+        <div id="addMachineModal" class="max-w-2xl w-full bg-white rounded-[2.5rem] shadow-2xl p-10 hidden transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-8">Instrument Onboarding</h2>
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase ml-1">Facility</label><select id="newMachineLab" class="w-full"></select></div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase ml-1">Asset ID</label><input id="newMachineId" type="text" placeholder="VLL/XXX/000" class="w-full"></div>
+                </div>
+                <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase ml-1">Instrument Name</label><input id="newMachineName" type="text" placeholder="Technical designation" class="w-full"></div>
+                <div class="pt-6 border-t">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-[10px] font-black text-slate-800 uppercase">Extraction Fields</h3>
+                        <button id="addFieldBtn" class="text-emerald-500 font-bold text-[10px] uppercase">Add Field</button>
+                    </div>
+                    <div id="machineFieldsList" class="space-y-3"></div>
+                </div>
+                <div class="flex space-x-4 pt-8">
+                    <button id="saveMachineBtn" class="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-bold">Register Machine</button>
+                    <button class="closeModalBtn bg-slate-100 text-slate-500 px-10 py-5 rounded-2xl font-bold">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login -->
+    <div id="loginPage" class="fixed inset-0 z-[5000] bg-gradient-to-br from-emerald-50 via-white to-slate-50 flex items-center justify-center p-6 overflow-auto">
+        <div class="max-w-lg w-full bg-white/95 backdrop-blur-xl rounded-[3rem] shadow-2xl p-10 sm:p-14 border border-slate-200/50 space-y-10 sm:space-y-12 relative overflow-hidden my-6 min-h-[600px]">
+            <!-- Background decoration -->
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-slate-200/20 rounded-full blur-3xl"></div>
+            <!-- Animated top border -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
+            
+            <!-- Logo and title -->
+            <div class="text-center space-y-6">
+                <div class="relative">
+                    <img src="vimta_logo.png" alt="VIMTA" class="h-12 mx-auto drop-shadow-lg">
+                    <div class="absolute inset-0 h-12 mx-auto bg-emerald-500/10 blur-xl"></div>
+                </div>
+                <div class="space-y-2">
+                    <h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Welcome Back</h1>
+                    <p class="text-slate-500 font-medium text-sm sm:text-base">Sign in to VIMTA Labs LIMS</p>
+                </div>
+            </div>
+            
+            <!-- Login form -->
+            <div class="space-y-8">
+                <!-- Role selector -->
+                <div class="flex p-1.5 bg-slate-50 rounded-2xl border border-slate-200 relative">
+                    <div id="roleIndicator" class="absolute top-1 left-1 w-[calc(50%-4px)] h-[calc(100%-8px)] bg-white rounded-xl shadow-sm transition-all duration-300"></div>
+                    <button id="adminLoginBtn" class="relative flex-1 py-3.5 rounded-xl font-bold text-sm text-slate-400 transition-all duration-300">Admin</button>
+                    <button id="userLoginBtn" class="relative flex-1 py-3.5 rounded-xl font-bold text-sm bg-white text-emerald-500 shadow-sm border transition-all duration-300">User</button>
+                </div>
+                
+                <!-- Input fields -->
+                <div class="space-y-5">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <input id="username" type="text" placeholder="Identification ID" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all duration-300">
+                    </div>
+                    
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <input id="password" type="password" placeholder="Password" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all duration-300">
+                    </div>
+                    
+                    <!-- Login button -->
+                    <button id="loginBtn" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 sm:py-4 rounded-2xl font-black text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
+                        <span class="relative z-10">Enter System</span>
+                        <div class="absolute inset-0 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></div>
+                    </button>
+                    
+                    <!-- Signup link -->
+                    <div class="text-center space-y-2">
+                        <p class="text-sm text-slate-500">New to VIMTA Labs?</p>
+                        <button id="showSignupBtn" class="text-emerald-600 font-bold text-sm hover:text-emerald-700 transition-colors">
+                            Create an Account →
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error message -->
+            <div id="loginError" class="text-center text-red-500 text-sm font-bold hidden bg-red-50/50 border border-red-200 rounded-xl py-3 px-4">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Invalid Authentication</span>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center space-y-2">
+                <p class="text-[10px] text-slate-400 font-medium">VIMTA Labs • Excellence in Testing</p>
+                <p class="text-[9px] text-slate-300">Version 2.0 • AI-Powered LIMS</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-10 right-10 z-[7000] transform translate-y-24 opacity-0 transition-all duration-500">
+        <div id="toastBody" class="bg-slate-900 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center space-x-4 border-l-8 border-emerald-500">
+            <p id="toastMsg" class="font-bold text-sm"></p>
+        </div>
+    </div>
+
+    <script>
+        const api = window.electronAPI;
+        let activeUser = null;
+        let cropper = null;
+        let currentMachines = [];
+        let selectedMachine = null;
+        let currentExtraction = null;
+        let activeStream = null;
+
+        // --- LOGIN ---
+        const loginPage = document.getElementById('loginPage');
+        const adminLogBtn = document.getElementById('adminLoginBtn');
+        const userLogBtn = document.getElementById('userLoginBtn');
+        let loginType = 'user';
+        
+        adminLogBtn.onclick = () => {
+            loginType = 'admin';
+            adminLogBtn.className = 'relative flex-1 py-3.5 rounded-xl font-bold text-sm bg-white text-emerald-500 shadow-sm border transition-all duration-300';
+            userLogBtn.className = 'relative flex-1 py-3.5 rounded-xl font-bold text-sm text-slate-400 transition-all duration-300';
+            document.getElementById('roleIndicator').style.transform = 'translateX(0)';
+        };
+        userLogBtn.onclick = () => {
+            loginType = 'user';
+            userLogBtn.className = 'relative flex-1 py-3.5 rounded-xl font-bold text-sm bg-white text-emerald-500 shadow-sm border transition-all duration-300';
+            adminLogBtn.className = 'relative flex-1 py-3.5 rounded-xl font-bold text-sm text-slate-400 transition-all duration-300';
+            document.getElementById('roleIndicator').style.transform = 'translateX(100%)';
+        };
+
+        document.getElementById('loginBtn').onclick = async () => {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value;
+            
+            if (!u || !p) {
+                document.getElementById('loginError').classList.remove('hidden');
+                document.getElementById('loginError').querySelector('span').textContent = 'Username and password are required';
+                return;
+            }
+            
+            try {
+                const data = await api.login(u, p);
+                
+                if (data.message === 'Login successful') {
+                    activeUser = {
+                        username: data.user.username,
+                        full_name: data.user.full_name,
+                        role: data.user.role
+                    };
+                    loginSuccess();
+                } else {
+                    document.getElementById('loginError').classList.remove('hidden');
+                    document.getElementById('loginError').querySelector('span').textContent = data.error || 'Invalid credentials';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('loginError').classList.remove('hidden');
+                document.getElementById('loginError').querySelector('span').textContent = 'Login failed. Please try again.';
+            }
+        };
+
+        function loginSuccess() {
+            loginPage.classList.add('hidden');
+            document.getElementById('userNameDisplay').innerText = activeUser.full_name;
+            document.getElementById('userRoleDisplay').innerText = activeUser.role;
+            if (activeUser.role === 'admin') {
+                document.getElementById('adminNav').classList.remove('hidden');
+                document.getElementById('adminStats').classList.remove('hidden');
+                updateAdminStats();
+            }
+            loadLabs();
+            initWorkflow();
+            refreshReadings();
+        }
+
+        // --- WORKFLOW ---
+        async function loadLabs() {
+            const labs = await api.getLabs();
+            document.getElementById('labSelect').innerHTML = '<option value="">Select Lab</option>' + labs.map(l => `<option value="${l.lab_no}">${l.lab_no} - ${l.lab_name}</option>`).join('');
+            document.getElementById('newMachineLab').innerHTML = labs.map(l => `<option value="${l.lab_no}">${l.lab_no}</option>`).join('');
+        }
+
+        function initWorkflow() {
+            const labSelect = document.getElementById('labSelect');
+            const machineSelect = document.getElementById('machineSelect');
+
+            labSelect.onchange = async (e) => {
+                const l = e.target.value;
+                if (!l) { machineSelect.disabled = true; return; }
+                currentMachines = await api.getMachines(l);
+                machineSelect.disabled = false;
+                machineSelect.innerHTML = '<option value="">Select Instrument</option>' + currentMachines.map(m => `<option value="${m.machine_id}">${m.machine_id} - ${m.machine_name}</option>`).join('');
+            };
+
+            machineSelect.onchange = (e) => {
+                selectedMachine = currentMachines.find(m => m.machine_id === e.target.value);
+                const specs = document.getElementById('machineSpecs');
+                if (selectedMachine) {
+                    specs.classList.remove('hidden');
+                    document.getElementById('machineSpecsName').innerText = selectedMachine.machine_name;
+                    document.getElementById('machineSpecsFields').innerText = `FIELDS: ${selectedMachine.fields.join(', ')}`;
+                } else { specs.classList.add('hidden'); }
+            };
+
+            document.getElementById('cameraBtn').onclick = async () => {
+                try {
+                    activeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    const video = document.getElementById('video');
+                    video.srcObject = activeStream; video.play();
+                    document.getElementById('cameraView').classList.remove('hidden');
+                    document.getElementById('placeholder').classList.add('hidden');
+                } catch (e) { showToast('Camera access denied'); }
+            };
+
+            document.getElementById('closeCamBtn').onclick = () => {
+                if (activeStream) activeStream.getTracks().forEach(t => t.stop());
+                document.getElementById('cameraView').classList.add('hidden');
+                document.getElementById('placeholder').classList.remove('hidden');
+            };
+
+            document.getElementById('snapBtn').onclick = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                document.getElementById('closeCamBtn').onclick();
+                startCropper(canvas.toDataURL('image/jpeg'));
+            };
+
+            document.getElementById('fileInput').onchange = (e) => {
+                const r = new FileReader();
+                r.onload = (ev) => startCropper(ev.target.result);
+                r.readAsDataURL(e.target.files[0]);
+            };
+
+            document.getElementById('extractBtn').onclick = async () => {
+                if (!selectedMachine) return showToast('Select an instrument');
+                document.getElementById('extractLoading').classList.remove('hidden');
+                cropper.getCroppedCanvas().toBlob(async (blob) => {
+                    try {
+                        // Convert blob to base64 to avoid cloning issues
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                            const base64Image = event.target.result;
+                            try {
+                                const res = await api.extractValues(labSelect.value, selectedMachine.machine_id, base64Image);
+                                const data = res;
+                                currentExtraction = data;
+                                console.log('Extraction result:', data);
+                                showVerifyFields(data);
+                            } catch (e) { 
+                                console.error('Extraction error:', e);
+                                showToast('Extraction failed: ' + (e.message || 'Unknown error')); 
+                            }
+                            finally { document.getElementById('extractLoading').classList.add('hidden'); }
+                        };
+                        reader.readAsDataURL(blob);
+                    } catch (e) { 
+                        console.error('Blob processing error:', e);
+                        showToast('Image processing failed: ' + (e.message || 'Unknown error')); 
+                        document.getElementById('extractLoading').classList.add('hidden');
+                    }
+                }, 'image/jpeg');
+            };
+
+            document.getElementById('saveBtn').onclick = async () => {
+                const sid = document.getElementById('sampleId').value.trim();
+                if (!sid) return showToast('Sample ID required');
+                
+                // Collect all field values
+                const readings = {};
+                document.querySelectorAll('#fieldsGrid input').forEach(i => {
+                    readings[i.dataset.field] = i.value;
+                });
+                
+                try {
+                    const saveData = {
+                        lab_no: labSelect.value,
+                        machine_id: selectedMachine.machine_id,
+                        sample_id: sid,
+                        readings: readings,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    await api.saveReading(saveData);
+                    showToast('Saved to LIMS successfully', 'success');
+                    resetWork();
+                    refreshReadings();
+                    if (activeUser.role === 'admin') updateAdminStats();
+                } catch (e) { 
+                    console.error('Save error:', e);
+                    showToast('Save failed: ' + (e.message || 'Unknown error')); 
+                }
+            };
+
+            document.getElementById('discardBtn').onclick = resetWork;
+            document.getElementById('resetCropBtn').onclick = () => {
+                document.getElementById('cropView').classList.add('hidden');
+                document.getElementById('cropControls').classList.add('hidden');
+                document.getElementById('placeholder').classList.remove('hidden');
+            };
+        }
+
+        function startCropper(src) {
+            document.getElementById('imageToCrop').src = src;
+            document.getElementById('cropView').classList.remove('hidden');
+            document.getElementById('cropControls').classList.remove('hidden');
+            document.getElementById('placeholder').classList.add('hidden');
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(document.getElementById('imageToCrop'), { viewMode: 1, autoCropArea: 0.8 });
+        }
+
+        function showVerifyFields(data) {
+            document.getElementById('verifyCard').classList.remove('opacity-40', 'pointer-events-none');
+            const grid = document.getElementById('fieldsGrid');
+            grid.innerHTML = '';
+            
+            // Get machine fields and values
+            const fields = selectedMachine.fields || ['speed', 'temperature', 'time_value'];
+            const values = data.values || data.readings || {};
+            const units = selectedMachine.units || { speed: 'RPM', temperature: '°C', time_value: 'min' };
+            
+            // Create field inputs
+            fields.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'space-y-1';
+                const fieldName = f.replace(/_/g, ' ');
+                const fieldValue = values[f] || '';
+                const fieldUnit = units[f] || '';
+                div.innerHTML = `<label class="text-[9px] font-black text-slate-400 uppercase ml-1">${fieldName} (${fieldUnit})</label><input type="text" data-field="${f}" value="${fieldValue}" class="w-full !py-2 !px-4 !text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-emerald-500 focus:bg-white">`;
+                grid.appendChild(div);
+            });
+            
+            // Show success message
+            showToast('Values extracted successfully. Please verify before saving.', 'success');
+        }
+
+        async function updateAdminStats() {
+            try {
+                const res = await fetch('http://localhost:5000/api/stats');
+                const stats = await res.json();
+                document.querySelectorAll('.statLabs').forEach(e => e.innerText = stats.total_labs);
+                document.querySelectorAll('.statMachines').forEach(e => e.innerText = stats.total_machines);
+                document.querySelectorAll('.statUsers').forEach(e => e.innerText = stats.total_users);
+                document.querySelectorAll('.statReadings').forEach(e => e.innerText = stats.total_readings);
+            } catch (e) {}
+        }
+
+        function resetWork() {
+            document.getElementById('verifyCard').classList.add('opacity-40', 'pointer-events-none');
+            document.getElementById('cropView').classList.add('hidden');
+            document.getElementById('cropControls').classList.add('hidden');
+            document.getElementById('placeholder').classList.remove('hidden');
+            document.getElementById('sampleId').value = '';
+        }
+
+        // Enhanced refresh functions
+        async function refreshAllData() {
+            try {
+                // Show loading state
+                const refreshBtn = document.getElementById('refreshBtn');
+                const originalContent = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Refreshing...</span>';
+                refreshBtn.disabled = true;
+                
+                // Refresh all data
+                await Promise.all([
+                    refreshReadings(),
+                    updateAdminStats(),
+                    loadLabs()
+                ]);
+                
+                // Restore button
+                refreshBtn.innerHTML = originalContent;
+                refreshBtn.disabled = false;
+                showToast('Data refreshed successfully', 'success');
+            } catch (error) {
+                console.error('Refresh error:', error);
+                const refreshBtn = document.getElementById('refreshBtn');
+                refreshBtn.innerHTML = originalContent;
+                refreshBtn.disabled = false;
+                showToast('Failed to refresh data', 'error');
+            }
+        }
+        
+        async function refreshReadings() {
+            try {
+                const readings = await api.getReadings(labSelect ? labSelect.value : null);
+                const body = document.getElementById('readingsTable');
+                
+                if (!readings || readings.length === 0) {
+                    body.innerHTML = '<tr><td colspan="4" class="px-8 py-10 text-center text-slate-300 italic">No activity found</td></tr>';
+                    return;
+                }
+                
+                body.innerHTML = readings.slice(0, 10).map(r => {
+                    const readingsData = r.readings || r.reading_json || {};
+                    const readingsValues = Object.values(readingsData).filter(v => v !== null && v !== '').join(' | ');
+                    
+                    return `
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="px-8 py-4 font-bold text-slate-900">${r.sample_id || 'N/A'}</td>
+                            <td class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">${r.machine_id || 'N/A'}</td>
+                            <td class="px-8 py-4 font-bold text-emerald-600 text-xs">${readingsValues || 'No readings'}</td>
+                            <td class="px-8 py-4 text-right"><span class="px-2 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-lg">COMMITTED</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Error refreshing readings:', e);
+                document.getElementById('readingsTable').innerHTML = '<tr><td colspan="4" class="px-8 py-10 text-center text-slate-300 italic">Error loading readings</td></tr>';
+            }
+        }
+
+        function showToast(msg, type = 'error') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            document.getElementById('toastBody').className = `bg-slate-900 text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center space-x-4 border-l-8 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'}`;
+            t.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 4000);
+        }
+
+        // Modals
+        window.openModal = (id) => {
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById(id).classList.remove('hidden');
+            setTimeout(() => { document.getElementById('modalOverlay').classList.add('opacity-100'); document.getElementById(id).classList.remove('scale-95'); }, 10);
+            
+            // Load data when modals are opened
+            if (id === 'manageUsersModal') {
+                loadUsersData();
+            }
+            if (id === 'userApprovalModal') {
+                loadPendingUsers();
+            }
+        };
+        window.closeModal = () => {
+            document.getElementById('modalOverlay').classList.remove('opacity-100');
+            document.querySelectorAll('#modalOverlay > div').forEach(m => m.classList.add('scale-95'));
+            setTimeout(() => { document.getElementById('modalOverlay').classList.add('hidden'); document.querySelectorAll('#modalOverlay > div').forEach(m => m.classList.add('hidden')); }, 300);
+        };
+        document.querySelectorAll('.closeModalBtn').forEach(b => b.onclick = closeModal);
+        document.getElementById('logoutBtn').onclick = () => location.reload();
+        document.getElementById('refreshBtn').onclick = refreshAllData;
+        
+        // Signup functionality
+        document.getElementById('showSignupBtn').onclick = () => {
+            openModal('signupModal');
+        };
+        
+        document.getElementById('signupBtn').onclick = async () => {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const userId = document.getElementById('signupUserId').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            
+            // Validation
+            if (!name || !email || !userId || !password || !confirmPassword) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            try {
+                const data = await api.signup({
+                    name: name,
+                    email: email,
+                    user_id: userId,
+                    password: password,
+                    role: 'user'
+                });
+                
+                if (data.message === 'User created successfully') {
+                    showToast('Account created successfully! You can now login.', 'success');
+                    closeModal();
+                    // Clear signup form
+                    document.getElementById('signupName').value = '';
+                    document.getElementById('signupEmail').value = '';
+                    document.getElementById('signupUserId').value = '';
+                    document.getElementById('signupPassword').value = '';
+                    document.getElementById('signupConfirmPassword').value = '';
+                } else {
+                    showToast(data.error || 'Failed to create account', 'error');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showToast('Failed to create account. Please try again.', 'error');
+            }
+        };
+        document.getElementById('addFieldBtn').onclick = () => {
+            const div = document.createElement('div');
+            div.className = 'field-row flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border';
+            div.innerHTML = `<input type="text" placeholder="Name" class="f-name flex-1 !py-2 !px-3 !text-xs"><select class="f-type !py-2 !px-3 !text-xs w-24"><option value="number">Number</option><option value="text">Text</option></select><input type="text" placeholder="Unit" class="f-unit w-16 !py-2 !px-3 !text-xs"><button onclick="this.parentElement.remove()" class="text-slate-300 hover:text-red-400">✕</button>`;
+            document.getElementById('machineFieldsList').appendChild(div);
+        };
+        document.getElementById('saveLabBtn').onclick = async () => {
+            const lab_no = document.getElementById('newLabNo').value.trim();
+            const lab_name = document.getElementById('newLabName').value.trim();
+            if (!lab_no || !lab_name) return;
+            const res = await fetch('http://localhost:5000/api/labs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lab_no, lab_name }) });
+            if (res.ok) { closeModal(); loadLabs(); updateAdminStats(); showToast('Lab Registered', 'success'); }
+        };
+        document.getElementById('saveMachineBtn').onclick = async () => {
+            const lab_no = document.getElementById('newMachineLab').value;
+            const machine_id = document.getElementById('newMachineId').value.trim();
+            const machine_name = document.getElementById('newMachineName').value.trim();
+            const fields = Array.from(document.querySelectorAll('.field-row')).map(r => ({ name: r.querySelector('.f-name').value, type: r.querySelector('.f-type').value, unit: r.querySelector('.f-unit').value }));
+            const res = await fetch('http://localhost:5000/api/machines', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lab_no, machine_id, machine_name, fields }) });
+            if (res.ok) { closeModal(); updateAdminStats(); showToast('Machine Onboarded', 'success'); }
+        };
+        
+        // Load users data for admin dashboard
+        async function loadUsersData() {
+            try {
+                const users = await api.getUsers();
+                const readings = await api.getReadings();
+                
+                // Update user table
+                const usersTable = document.getElementById('usersTable');
+                if (users.length === 0) {
+                    usersTable.innerHTML = '<tr><td colspan="6" class="px-8 py-10 text-center text-slate-300 italic">No users found</td></tr>';
+                } else {
+                    usersTable.innerHTML = users.map(user => {
+                        const userReadings = readings.filter(r => r.user_id === user.username).length;
+                        const status = userReadings > 0 ? 'Active' : 'Inactive';
+                        const statusColor = status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500';
+                        
+                        return `
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="px-8 py-4 font-bold text-slate-900">${user.username}</td>
+                                <td class="px-8 py-4 text-slate-700">${user.full_name}</td>
+                                <td class="px-8 py-4 text-slate-600 text-sm">${user.email}</td>
+                                <td class="px-8 py-4">
+                                    <span class="px-2 py-1 bg-purple-50 text-purple-600 text-[9px] font-black rounded-lg">${user.role}</span>
+                                </td>
+                                <td class="px-8 py-4 font-bold text-emerald-600">${userReadings}</td>
+                                <td class="px-8 py-4">
+                                    <span class="px-2 py-1 ${statusColor} text-[9px] font-black rounded-lg">${status}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+                
+                // Update summary cards
+                document.getElementById('totalUsersCount').textContent = users.length;
+                document.getElementById('activeUsersCount').textContent = users.filter(u => 
+                    readings.some(r => r.user_id === u.username)
+                ).length;
+                document.getElementById('totalReadingsCount').textContent = readings.length;
+                
+            } catch (error) {
+                console.error('Error loading users data:', error);
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="6" class="px-8 py-10 text-center text-red-300 italic">Error loading users data</td></tr>';
+            }
+        }
+        
+        // Load pending users for admin approval
+        async function loadPendingUsers() {
+            try {
+                const pendingUsers = await api.getPendingUsers();
+                const pendingUsersTable = document.getElementById('pendingUsersTable');
+                
+                if (pendingUsers.length === 0) {
+                    pendingUsersTable.innerHTML = '<tr><td colspan="6" class="px-8 py-10 text-center text-slate-300 italic">No pending approvals</td></tr>';
+                } else {
+                    pendingUsersTable.innerHTML = pendingUsers.map(user => {
+                        const createdDate = new Date(user.created_at).toLocaleDateString();
+                        return `
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="px-8 py-4 font-bold text-slate-900">${user.username}</td>
+                                <td class="px-8 py-4 text-slate-700">${user.full_name}</td>
+                                <td class="px-8 py-4 text-slate-600 text-sm">${user.email || 'N/A'}</td>
+                                <td class="px-8 py-4">
+                                    <span class="px-2 py-1 bg-purple-50 text-purple-600 text-[9px] font-black rounded-lg">${user.role}</span>
+                                </td>
+                                <td class="px-8 py-4 text-slate-500 text-sm">${createdDate}</td>
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button onclick="approveUser('${user.username}')" class="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors">
+                                            ALLOW
+                                        </button>
+                                        <button onclick="denyUser('${user.username}')" class="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors">
+                                            DENY
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading pending users:', error);
+                document.getElementById('pendingUsersTable').innerHTML = '<tr><td colspan="6" class="px-8 py-10 text-center text-red-300 italic">Error loading pending users</td></tr>';
+            }
+        }
+        
+        // Approve user function
+        async function approveUser(username) {
+            try {
+                await api.approveUser(username);
+                showToast(`User ${username} approved successfully`, 'success');
+                loadPendingUsers(); // Refresh the list
+                loadUsersData(); // Refresh users data if manage users modal is open
+            } catch (error) {
+                console.error('Error approving user:', error);
+                showToast('Failed to approve user', 'error');
+            }
+        }
+        
+        // Deny user function
+        async function denyUser(username) {
+            try {
+                await api.denyUser(username);
+                showToast(`User ${username} denied successfully`, 'success');
+                loadPendingUsers(); // Refresh the list
+                loadUsersData(); // Refresh users data if manage users modal is open
+            } catch (error) {
+                console.error('Error denying user:', error);
+                showToast('Failed to deny user', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
