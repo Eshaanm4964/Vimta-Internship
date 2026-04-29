@@ -1,4 +1,4 @@
-# AI-Based Machine Reading Automation System
+# Machine Reading Automation System
 
 A human-in-the-loop lab instrument reading capture system with AI-powered OCR extraction.
 
