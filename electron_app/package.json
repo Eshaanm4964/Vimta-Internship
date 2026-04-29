@@ -1,0 +1,51 @@
+{
+  "name": "vimta-labs-machine-reading",
+  "version": "1.0.0",
+  "description": "VIMTA Labs AI Machine Reading Automation System",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "keywords": [
+    "vimta",
+    "machine",
+    "reading",
+    "automation",
+    "ocr"
+  ],
+  "author": "VIMTA Labs",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.6.3"
+  },
+  "dependencies": {
+    "axios": "^1.4.0"
+  },
+  "build": {
+    "appId": "com.vimta.labs.machine-reading",
+    "productName": "VIMTA Labs Machine Reading",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

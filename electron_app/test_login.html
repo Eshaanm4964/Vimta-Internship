@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test - VIMTA Labs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vimta-green': '#10b981',
+                        'vimta-dark': '#064e3b',
+                        'vimta-light': '#d1fae5'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-vimta-green to-vimta-dark flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-8">
+        <div class="text-center">
+            <div class="flex justify-center">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <span class="text-3xl font-bold text-vimta-green">V</span>
+                </div>
+            </div>
+            <h2 class="mt-6 text-3xl font-bold text-white">VIMTA Labs</h2>
+            <p class="mt-2 text-sm text-vimta-light">AI Machine Reading Automation</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <h3 class="text-2xl font-semibold text-gray-900 text-center mb-6">Sign In</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Login Type</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="adminLoginBtn" class="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                            Admin Login
+                        </button>
+                        <button id="userLoginBtn" class="px-4 py-2 border-2 border-vimta-green text-vimta-green rounded-lg hover:bg-vimta-green hover:text-white transition-colors font-medium">
+                            User Login
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="loginForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <span id="usernameLabel">Employee ID</span>
+                            </label>
+                            <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vimta-green focus:border-transparent" placeholder="Enter employee ID">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-vimta-green focus:border-transparent" placeholder="Enter password">
+                        </div>
+                        
+                        <button id="loginBtn" class="w-full bg-vimta-green text-white py-3 rounded-md hover:bg-vimta-dark transition-colors font-medium">
+                            Sign In
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="loginMessage" class="mt-4 text-sm text-center"></div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    Test Accounts:<br>
+                    Admin: admin_dev / admin123<br>
+                    User: EMP001 / user123
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample users
+        const users = {
+            'admin_dev': { password: 'admin123', role: 'admin', name: 'System Administrator' },
+            'EMP001': { password: 'user123', role: 'user', name: 'John Doe' },
+            'EMP002': { password: 'user123', role: 'user', name: 'Jane Smith' }
+        };
+
+        let currentLoginType = 'user';
+
+        function setLoginType(type) {
+            const adminBtn = document.getElementById('adminLoginBtn');
+            const userBtn = document.getElementById('userLoginBtn');
+            const usernameLabel = document.getElementById('usernameLabel');
+            const usernameInput = document.getElementById('username');
+            
+            if (type === 'admin') {
+                adminBtn.className = 'px-4 py-2 border-2 border-vimta-green text-vimta-green rounded-lg hover:bg-vimta-green hover:text-white transition-colors font-medium';
+                userBtn.className = 'px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium';
+                usernameLabel.textContent = 'Admin ID';
+                usernameInput.placeholder = 'Enter admin credentials';
+            } else {
+                userBtn.className = 'px-4 py-2 border-2 border-vimta-green text-vimta-green rounded-lg hover:bg-vimta-green hover:text-white transition-colors font-medium';
+                adminBtn.className = 'px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium';
+                usernameLabel.textContent = 'Employee ID';
+                usernameInput.placeholder = 'Enter employee ID';
+            }
+            currentLoginType = type;
+        }
+
+        function showLoginMessage(message, type) {
+            const messageDiv = document.getElementById('loginMessage');
+            const colorClasses = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                info: 'text-blue-600'
+            };
+            
+            messageDiv.className = `mt-4 text-sm text-center ${colorClasses[type] || 'text-gray-600'}`;
+            messageDiv.textContent = message;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                }, 3000);
+            }
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showLoginMessage('Please enter both username and password', 'error');
+                return;
+            }
+            
+            const user = users[username];
+            
+            if (!user || user.password !== password) {
+                showLoginMessage('Invalid credentials. Please try again.', 'error');
+                return;
+            }
+            
+            // Successful login
+            showLoginMessage(`✅ Login successful! Welcome ${user.name} (${user.role})`, 'success');
+            
+            // Clear form
+            setTimeout(() => {
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }, 2000);
+        }
+
+        // Event listeners
+        document.getElementById('adminLoginBtn').addEventListener('click', () => setLoginType('admin'));
+        document.getElementById('userLoginBtn').addEventListener('click', () => setLoginType('user'));
+        document.getElementById('loginBtn').addEventListener('click', handleLogin);
+        
+        // Allow Enter key to login
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        // Initialize
+        setLoginType('user');
+    </script>
+</body>
+</html>

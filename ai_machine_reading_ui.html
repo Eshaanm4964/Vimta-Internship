@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Based Machine Reading Automation System | Vimta Labs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1e3a8a',
+                        'secondary-teal': '#14b8a6',
+                        'success-green': '#16a34a',
+                        'warning-amber': '#f59e0b',
+                        'error-red': '#dc2626',
+                        'bg-light': '#f8fafc',
+                        'border-gray': '#e2e8f0',
+                        'text-slate': '#1e293b',
+                        'text-muted': '#64748b'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .glass-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border-radius: 0.75rem;
+        }
+        
+        .glass-card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card-hover:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #1e3a8a;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: 2px solid #1e3a8a;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: #1e3a8a;
+            color: white;
+        }
+        
+        .drag-drop-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.75rem;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .drag-drop-area:hover {
+            border-color: #1e3a8a;
+            background: #f8fafc;
+        }
+        
+        .drag-drop-area.dragover {
+            border-color: #14b8a6;
+            background: #f0fdfa;
+        }
+        
+        .progress-step {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .progress-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2rem;
+            height: 2px;
+            background: #e2e8f0;
+        }
+        
+        .progress-step.active:not(:last-child)::after {
+            background: #1e3a8a;
+        }
+        
+        .progress-step.completed:not(:last-child)::after {
+            background: #16a34a;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-active {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .status-calibration {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+        
+        .status-offline {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .field-error {
+            border-color: #dc2626 !important;
+            background: #fef2f2 !important;
+        }
+        
+        .field-warning {
+            border-color: #f59e0b !important;
+            background: #fffbeb !important;
+        }
+        
+        .json-preview {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #1e3a8a;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-border-gray sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-primary-blue rounded-lg flex items-center justify-center">
+                            <i class="fas fa-microscope text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-text-slate">Vimta Labs</h1>
+                            <p class="text-xs text-text-muted">LIMS Automation</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-text-muted hover:text-text-slate transition-colors">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-secondary-teal rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-semibold">JD</span>
+                        </div>
+                        <span class="text-sm font-medium text-text-slate">Dr. John Doe</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Title Section -->
+        <div class="mb-8 fade-in">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="w-12 h-12 bg-primary-blue rounded-xl flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-text-slate">AI-Based Machine Reading Automation System</h1>
+                    <p class="text-text-muted mt-1">Upload machine images, extract numeric readings as JSON, verify once, and save to LIMS.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="mb-8 fade-in">
+            <div class="flex items-center justify-center space-x-8">
+                <div class="progress-step active" id="step1">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-primary-blue text-white rounded-full flex items-center justify-center font-semibold">
+                            1
+                        </div>
+                        <div>
+                            <p class="font-semibold text-text-slate">Select Machine</p>
+                            <p class="text-sm text-text-muted">Choose lab and instrument</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-step" id="step2">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
+                            2
+                        </div>
+                        <div>
+                            <p class="font-semibold text-text-muted">Extract Values</p>
+                            <p class="text-sm text-text-muted">Upload and analyze image</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-step" id="step3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold">
+                            3
+                        </div>
+                        <div>
+                            <p class="font-semibold text-text-muted">Verify & Save</p>
+                            <p class="text-sm text-text-muted">Confirm and store data</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Lab & Machine Selection Card -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 bg-secondary-teal rounded-lg flex items-center justify-center">
+                            <i class="fas fa-flask text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-text-slate">Lab & Machine Selection</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Lab Number</label>
+                            <select class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                                <option value="">Select Lab</option>
+                                <option value="CL07">CL07 - Clinical Laboratory</option>
+                                <option value="CL08">CL08 - Research Laboratory</option>
+                                <option value="CL09">CL09 - Quality Control</option>
+                            </select>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Machine ID</label>
+                            <select class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                                <option value="">Select Machine</option>
+                                <option value="VLL/CEN/048">VLL/CEN/048 - Centrifuge</option>
+                                <option value="VLL/OSMO/001">VLL/OSMO/001 - Osmometer</option>
+                                <option value="VLL/UVS/006">VLL/UVS/006 - UV Spectrophotometer</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <label class="block text-sm font-semibold text-text-slate mb-2">Selected Machine Details</label>
+                        <div class="text-sm text-text-muted">
+                            <p><strong>Type:</strong> Centrifuge Machine</p>
+                            <p><strong>Model:</strong> VLL/CEN/048</p>
+                            <div class="mt-2">
+                                <span class="status-badge status-active">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload Card -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 bg-primary-blue rounded-lg flex items-center justify-center">
+                            <i class="fas fa-camera text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-text-slate">Image Upload</h2>
+                    </div>
+                    
+                    <div class="drag-drop-area" id="dropZone">
+                        <div class="space-y-4">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-text-muted"></i>
+                            </div>
+                            <div>
+                                <p class="text-lg font-semibold text-text-slate">Drag & Drop Image Here</p>
+                                <p class="text-sm text-text-muted mt-1">or click to browse</p>
+                            </div>
+                            <div class="flex justify-center space-x-4">
+                                <button class="btn-primary">
+                                    <i class="fas fa-upload mr-2"></i>
+                                    Upload Image
+                                </button>
+                                <button class="btn-secondary">
+                                    <i class="fas fa-camera mr-2"></i>
+                                    Capture from Camera
+                                </button>
+                            </div>
+                            <p class="text-xs text-text-muted">Supported formats: JPG, PNG, WEBP (Max 10MB)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Image Preview (Hidden by default) -->
+                    <div id="imagePreview" class="hidden mt-4">
+                        <div class="relative">
+                            <img src="" alt="Machine display" class="w-full rounded-lg">
+                            <button class="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extract Values Action -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-slate">Extract Values</h3>
+                            <p class="text-sm text-text-muted">AI-powered numeric value detection</p>
+                        </div>
+                        <button class="btn-primary" id="extractBtn">
+                            <i class="fas fa-magic mr-2"></i>
+                            Extract Values
+                        </button>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="extractingState" class="hidden mt-4 p-4 bg-blue-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="loading-spinner"></div>
+                            <div>
+                                <p class="font-semibold text-primary-blue">Extracting values...</p>
+                                <p class="text-sm text-text-muted">AI is analyzing the machine display</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Success State -->
+                    <div id="extractSuccessState" class="hidden mt-4 p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-success-green rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-success-green">Extraction completed</p>
+                                <p class="text-sm text-text-muted">Please verify the extracted values below</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div id="extractErrorState" class="hidden mt-4 p-4 bg-red-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-error-red rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-error-red">Unable to detect readings</p>
+                                <p class="text-sm text-text-muted">Please upload a clearer image</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Card (Hidden by default) -->
+                <div id="verificationCard" class="glass-card glass-card-hover p-6 hidden fade-in">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 bg-warning-amber rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-double text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-text-slate">Human Verification</h2>
+                    </div>
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-exclamation-triangle text-warning-amber"></i>
+                            <p class="text-sm font-semibold text-warning-amber">Please verify all extracted values before saving.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Lab No</label>
+                            <input type="text" value="CL07" class="w-full px-4 py-2 border border-border-gray rounded-lg bg-gray-50" readonly>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Machine ID</label>
+                            <input type="text" value="VLL/CEN/048" class="w-full px-4 py-2 border border-border-gray rounded-lg bg-gray-50" readonly>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Machine Type</label>
+                            <input type="text" value="Centrifuge" class="w-full px-4 py-2 border border-border-gray rounded-lg bg-gray-50" readonly>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Machine Name</label>
+                            <input type="text" value="High-Speed Centrifuge" class="w-full px-4 py-2 border border-border-gray rounded-lg bg-gray-50" readonly>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Sample ID <span class="text-red-500">*</span></label>
+                            <input type="text" placeholder="Enter sample ID" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Reference ID</label>
+                            <input type="text" placeholder="Optional reference" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Speed (RPM)</label>
+                            <input type="number" value="14000" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Temperature (°C)</label>
+                            <input type="number" value="-10" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Time</label>
+                            <input type="text" value="19:25" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Weight (g)</label>
+                            <input type="number" placeholder="Not detected" class="w-full px-4 py-2 border border-border-gray rounded-lg field-error focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Pressure (bar)</label>
+                            <input type="number" value="1.2" class="w-full px-4 py-2 border border-border-gray rounded-lg field-warning focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Volume (mL)</label>
+                            <input type="number" placeholder="Not detected" class="w-full px-4 py-2 border border-border-gray rounded-lg field-error focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-text-slate">Extra Readings</label>
+                            <input type="text" placeholder="Additional values" class="w-full px-4 py-2 border border-border-gray rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JSON Preview Panel (Hidden by default) -->
+                <div id="jsonPanel" class="glass-card glass-card-hover p-6 hidden fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-primary-blue rounded-lg flex items-center justify-center">
+                                <i class="fas fa-code text-white text-sm"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-text-slate">JSON Preview</h2>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs bg-green-100 text-success-green px-2 py-1 rounded-full font-semibold">LIMS-ready</span>
+                        </div>
+                    </div>
+                    
+                    <div class="json-preview">
+{
+  "lab_no": "CL07",
+  "machine_id": "VLL/CEN/048",
+  "machine_type": "centrifuge",
+  "sample_id": "SMP-001",
+  "readings": {
+    "speed": 14000,
+    "temperature": -10,
+    "time_value": "19:25"
+  },
+  "status": "verified"
+}
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-4">
+                        <button class="btn-secondary">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy JSON
+                        </button>
+                        <button class="btn-primary">
+                            <i class="fas fa-download mr-2"></i>
+                            Download JSON
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Confirm and Save Section (Hidden by default) -->
+                <div id="confirmSaveSection" class="glass-card glass-card-hover p-6 hidden fade-in">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-slate">Ready to Save</h3>
+                            <p class="text-sm text-text-muted">Confirm the extracted data and save to LIMS</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button class="btn-secondary">
+                                <i class="fas fa-redo mr-2"></i>
+                                Re-extract
+                            </button>
+                            <button class="btn-secondary">
+                                <i class="fas fa-sync mr-2"></i>
+                                Reset
+                            </button>
+                            <button class="btn-primary">
+                                <i class="fas fa-save mr-2"></i>
+                                Confirm & Save
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Success Message -->
+                    <div id="saveSuccessMessage" class="hidden mt-4 p-4 bg-green-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-success-green rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-success-green">Reading saved successfully</p>
+                                <p class="text-sm text-text-muted">Data has been stored in the LIMS system</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Saved Readings Table -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-secondary-teal rounded-lg flex items-center justify-center">
+                                <i class="fas fa-table text-white text-sm"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-text-slate">Saved Readings</h2>
+                        </div>
+                        <button class="text-sm text-secondary-teal hover:text-primary-blue">
+                            <i class="fas fa-filter mr-1"></i>
+                            Filter
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-border-gray">
+                                    <th class="text-left py-2 font-semibold text-text-slate">ID</th>
+                                    <th class="text-left py-2 font-semibold text-text-slate">Lab</th>
+                                    <th class="text-left py-2 font-semibold text-text-slate">Machine</th>
+                                    <th class="text-left py-2 font-semibold text-text-slate">Sample</th>
+                                    <th class="text-left py-2 font-semibold text-text-slate">Status</th>
+                                    <th class="text-left py-2 font-semibold text-text-slate">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-border-gray hover:bg-gray-50">
+                                    <td class="py-2">#001</td>
+                                    <td class="py-2">CL07</td>
+                                    <td class="py-2">VLL/CEN/048</td>
+                                    <td class="py-2">SMP-001</td>
+                                    <td class="py-2">
+                                        <span class="status-badge status-active">Verified</span>
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="flex space-x-1">
+                                            <button class="text-blue-500 hover:text-blue-700" title="View JSON">
+                                                <i class="fas fa-eye text-xs"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700" title="Edit">
+                                                <i class="fas fa-edit text-xs"></i>
+                                            </button>
+                                            <button class="text-purple-500 hover:text-purple-700" title="Export">
+                                                <i class="fas fa-download text-xs"></i>
+                                            </button>
+                                            <button class="text-orange-500 hover:text-orange-700" title="Pull to LIMS">
+                                                <i class="fas fa-cloud-upload-alt text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-border-gray hover:bg-gray-50">
+                                    <td class="py-2">#002</td>
+                                    <td class="py-2">CL07</td>
+                                    <td class="py-2">VLL/OSMO/001</td>
+                                    <td class="py-2">SMP-002</td>
+                                    <td class="py-2">
+                                        <span class="status-badge status-active">Verified</span>
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="flex space-x-1">
+                                            <button class="text-blue-500 hover:text-blue-700" title="View JSON">
+                                                <i class="fas fa-eye text-xs"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700" title="Edit">
+                                                <i class="fas fa-edit text-xs"></i>
+                                            </button>
+                                            <button class="text-purple-500 hover:text-purple-700" title="Export">
+                                                <i class="fas fa-download text-xs"></i>
+                                            </button>
+                                            <button class="text-orange-500 hover:text-orange-700" title="Pull to LIMS">
+                                                <i class="fas fa-cloud-upload-alt text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-border-gray hover:bg-gray-50">
+                                    <td class="py-2">#003</td>
+                                    <td class="py-2">CL08</td>
+                                    <td class="py-2">VLL/UVS/006</td>
+                                    <td class="py-2">SMP-003</td>
+                                    <td class="py-2">
+                                        <span class="status-badge status-calibration">Pending</span>
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="flex space-x-1">
+                                            <button class="text-blue-500 hover:text-blue-700" title="View JSON">
+                                                <i class="fas fa-eye text-xs"></i>
+                                            </button>
+                                            <button class="text-green-500 hover:text-green-700" title="Edit">
+                                                <i class="fas fa-edit text-xs"></i>
+                                            </button>
+                                            <button class="text-purple-500 hover:text-purple-700" title="Export">
+                                                <i class="fas fa-download text-xs"></i>
+                                            </button>
+                                            <button class="text-orange-500 hover:text-orange-700" title="Pull to LIMS">
+                                                <i class="fas fa-cloud-upload-alt text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 bg-primary-blue rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-text-slate">Today's Statistics</h2>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-text-muted">Total Readings</span>
+                            <span class="text-lg font-bold text-text-slate">24</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-text-muted">Verified</span>
+                            <span class="text-lg font-bold text-success-green">18</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-text-muted">Pending</span>
+                            <span class="text-lg font-bold text-warning-amber">6</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-text-muted">Success Rate</span>
+                            <span class="text-lg font-bold text-primary-blue">75%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-card glass-card-hover p-6 fade-in">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-8 h-8 bg-secondary-teal rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bolt text-white text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-text-slate">Quick Actions</h2>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button class="w-full btn-primary text-left">
+                            <i class="fas fa-cog mr-2"></i>
+                            Machine Configuration
+                        </button>
+                        <button class="w-full btn-secondary text-left">
+                            <i class="fas fa-download mr-2"></i>
+                            Export All Readings
+                        </button>
+                        <button class="w-full btn-secondary text-left">
+                            <i class="fas fa-sync mr-2"></i>
+                            Sync with LIMS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Machine Configuration Modal (Hidden by default) -->
+    <div id="machineConfigModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-primary-blue rounded-lg flex items-center justify-center">
+                        <i class="fas fa-cog text-white text-sm"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-text-slate">Machine Configuration</h2>
+                </div>
+                <button class="text-text-muted hover:text-text-slate">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <button class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Machine
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-border-gray">
+                            <th class="text-left py-2 font-semibold text-text-slate">Machine ID</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Name</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Lab</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Type</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Fields</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Units</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Status</th>
+                            <th class="text-left py-2 font-semibold text-text-slate">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/CEN/048</td>
+                            <td class="py-2">High-Speed Centrifuge</td>
+                            <td class="py-2">CL07</td>
+                            <td class="py-2">Centrifuge</td>
+                            <td class="py-2">Speed, Temp, Time</td>
+                            <td class="py-2">RPM, °C, min</td>
+                            <td class="py-2">
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/OSMO/001</td>
+                            <td class="py-2">Osmometer</td>
+                            <td class="py-2">CL07</td>
+                            <td class="py-2">Osmometer</td>
+                            <td class="py-2">Osmolality, Temp</td>
+                            <td class="py-2">mOsm/kg, °C</td>
+                            <td class="py-2">
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/UVS/006</td>
+                            <td class="py-2">UV Spectrophotometer</td>
+                            <td class="py-2">CL08</td>
+                            <td class="py-2">Spectrophotometer</td>
+                            <td class="py-2">Wavelength, Absorbance</td>
+                            <td class="py-2">nm, AU</td>
+                            <td class="py-2">
+                                <span class="status-badge status-calibration">Calibration Due</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/MIXR/023</td>
+                            <td class="py-2">ThermoMixer</td>
+                            <td class="py-2">CL07</td>
+                            <td class="py-2">Mixer</td>
+                            <td class="py-2">Speed, Temp, Time</td>
+                            <td class="py-2">RPM, °C, min</td>
+                            <td class="py-2">
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/MAGS/012</td>
+                            <td class="py-2">Magnetic Stirrer</td>
+                            <td class="py-2">CL08</td>
+                            <td class="py-2">Stirrer</td>
+                            <td class="py-2">Speed, Temp</td>
+                            <td class="py-2">RPM, °C</td>
+                            <td class="py-2">
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/WAB/017</td>
+                            <td class="py-2">Water Bath</td>
+                            <td class="py-2">CL09</td>
+                            <td class="py-2">Water Bath</td>
+                            <td class="py-2">Temp, Time</td>
+                            <td class="py-2">°C, min</td>
+                            <td class="py-2">
+                                <span class="status-badge status-offline">Offline</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-border-gray hover:bg-gray-50">
+                            <td class="py-2">VLL/FMS/002</td>
+                            <td class="py-2">Headspace Analyzer</td>
+                            <td class="py-2">CL09</td>
+                            <td class="py-2">Analyzer</td>
+                            <td class="py-2">Pressure, Temp, Time</td>
+                            <td class="py-2">bar, °C, min</td>
+                            <td class="py-2">
+                                <span class="status-badge status-active">Active</span>
+                            </td>
+                            <td class="py-2">
+                                <div class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Edit">
+                                        <i class="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700" title="Delete">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Responsive View -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border-gray p-4">
+        <div class="flex justify-around">
+            <button class="flex flex-col items-center space-y-1 text-primary-blue">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-xs">Home</span>
+            </button>
+            <button class="flex flex-col items-center space-y-1 text-text-muted">
+                <i class="fas fa-camera text-xl"></i>
+                <span class="text-xs">Capture</span>
+            </button>
+            <button class="flex flex-col items-center space-y-1 text-text-muted">
+                <i class="fas fa-table text-xl"></i>
+                <span class="text-xs">Readings</span>
+            </button>
+            <button class="flex flex-col items-center space-y-1 text-text-muted">
+                <i class="fas fa-cog text-xl"></i>
+                <span class="text-xs">Config</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Interactive JavaScript for UI demonstration
+        document.addEventListener('DOMContentLoaded', function() {
+            // Progress step management
+            let currentStep = 1;
+            
+            function updateProgress(step) {
+                currentStep = step;
+                for (let i = 1; i <= 3; i++) {
+                    const stepElement = document.getElementById(`step${i}`);
+                    const circle = stepElement.querySelector('div > div');
+                    const text = stepElement.querySelectorAll('div > div > p');
+                    
+                    if (i < step) {
+                        stepElement.classList.add('completed');
+                        stepElement.classList.remove('active');
+                        circle.className = 'w-10 h-10 bg-success-green text-white rounded-full flex items-center justify-center font-semibold';
+                        circle.innerHTML = '<i class="fas fa-check text-sm"></i>';
+                        text[0].className = 'font-semibold text-text-slate';
+                        text[1].className = 'text-sm text-text-muted';
+                    } else if (i === step) {
+                        stepElement.classList.add('active');
+                        stepElement.classList.remove('completed');
+                        circle.className = 'w-10 h-10 bg-primary-blue text-white rounded-full flex items-center justify-center font-semibold';
+                        circle.textContent = i;
+                        text[0].className = 'font-semibold text-text-slate';
+                        text[1].className = 'text-sm text-text-muted';
+                    } else {
+                        stepElement.classList.remove('active', 'completed');
+                        circle.className = 'w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold';
+                        circle.textContent = i;
+                        text[0].className = 'font-semibold text-text-muted';
+                        text[1].className = 'text-sm text-text-muted';
+                    }
+                }
+            }
+            
+            // Extract button functionality
+            const extractBtn = document.getElementById('extractBtn');
+            const extractingState = document.getElementById('extractingState');
+            const extractSuccessState = document.getElementById('extractSuccessState');
+            const extractErrorState = document.getElementById('extractErrorState');
+            const verificationCard = document.getElementById('verificationCard');
+            const jsonPanel = document.getElementById('jsonPanel');
+            const confirmSaveSection = document.getElementById('confirmSaveSection');
+            
+            extractBtn.addEventListener('click', function() {
+                // Show loading state
+                extractBtn.classList.add('hidden');
+                extractingState.classList.remove('hidden');
+                
+                // Simulate extraction process
+                setTimeout(() => {
+                    extractingState.classList.add('hidden');
+                    extractSuccessState.classList.remove('hidden');
+                    
+                    // Show verification card
+                    setTimeout(() => {
+                        verificationCard.classList.remove('hidden');
+                        jsonPanel.classList.remove('hidden');
+                        confirmSaveSection.classList.remove('hidden');
+                        updateProgress(2);
+                    }, 1000);
+                }, 3000);
+            });
+            
+            // Drag and drop functionality
+            const dropZone = document.getElementById('dropZone');
+            const imagePreview = document.getElementById('imagePreview');
+            
+            dropZone.addEventListener('click', function() {
+                // Simulate file selection
+                alert('File selection dialog would open here');
+            });
+            
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                // Simulate image upload
+                dropZone.classList.add('hidden');
+                imagePreview.classList.remove('hidden');
+                updateProgress(2);
+            });
+            
+            // Machine configuration modal
+            const machineConfigModal = document.getElementById('machineConfigModal');
+            const quickActions = document.querySelectorAll('.quick-actions button');
+            
+            quickActions.forEach(button => {
+                if (button.textContent.includes('Machine Configuration')) {
+                    button.addEventListener('click', function() {
+                        machineConfigModal.classList.remove('hidden');
+                    });
+                }
+            });
+            
+            // Close modal
+            machineConfigModal.addEventListener('click', function(e) {
+                if (e.target === machineConfigModal) {
+                    machineConfigModal.classList.add('hidden');
+                }
+            });
+            
+            // Confirm and save functionality
+            const confirmSaveBtn = document.querySelector('#confirmSaveSection .btn-primary');
+            const saveSuccessMessage = document.getElementById('saveSuccessMessage');
+            
+            confirmSaveBtn.addEventListener('click', function() {
+                saveSuccessMessage.classList.remove('hidden');
+                updateProgress(3);
+                
+                setTimeout(() => {
+                    // Reset form
+                    verificationCard.classList.add('hidden');
+                    jsonPanel.classList.add('hidden');
+                    confirmSaveSection.classList.add('hidden');
+                    extractSuccessState.classList.add('hidden');
+                    extractBtn.classList.remove('hidden');
+                    dropZone.classList.remove('hidden');
+                    imagePreview.classList.add('hidden');
+                    saveSuccessMessage.classList.add('hidden');
+                    updateProgress(1);
+                }, 3000);
+            });
+        });
+    </script>
+</body>
+</html>

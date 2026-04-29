@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Machine Reading Automation</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <main class="page">
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Vimta Labs • LIMS Automation</p>
+        <h1>AI-Based Machine Reading Automation System</h1>
+        <p>
+          Enter lab number, select the machine ID, upload a photo, extract readings,
+          verify once, and save confirmed data for LIMS.
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1. Lab & Machine Selection</h2>
+
+      <div class="form-grid">
+        <label>Lab No
+          <select id="lab_no" required>
+            <option value="">Select Lab No</option>
+          </select>
+        </label>
+
+        <label>Machine ID
+          <select id="machine_id_select" required disabled>
+            <option value="">Select Lab No first</option>
+          </select>
+        </label>
+
+        <label class="wide">Selected Machine Details
+          <input id="machine_details" readonly placeholder="Machine details will appear here" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Upload Machine Photo <span style="color: red;">*</span></h2>
+
+      <div class="warning">
+        ⚠️ Photo upload is MANDATORY. You must upload a clear photo of the machine display to extract readings.
+      </div>
+
+      <div class="upload-box">
+        <input type="file" id="imageInput" accept="image/*" capture="environment" required />
+        <button type="button" id="extractBtn">Extract Values</button>
+      </div>
+
+      <p id="message"></p>
+      <img id="previewImage" class="preview-image" alt="Uploaded preview" />
+    </section>
+
+    <section class="card hidden" id="confirmSection">
+      <h2>3. Verify Extracted Values</h2>
+
+      <div class="warning">
+        Scientist must confirm/edit values before saving. Nothing is saved automatically.
+      </div>
+
+      <div id="ocrWarning" class="danger hidden"></div>
+      <div id="qualityWarning" class="warning hidden"></div>
+
+      <form id="confirmForm" class="form-grid">
+
+        <label>Lab No
+          <input id="lab_no_confirm" required />
+        </label>
+
+        <label>Machine ID
+          <input id="machine_id" required />
+        </label>
+
+        <label>Machine Type
+          <input id="machine_type" />
+        </label>
+
+        <label>Machine Name
+          <input id="machine_name" />
+        </label>
+
+        <label>Sample ID / Sample No
+          <input id="sample_id" required placeholder="Enter sample no" />
+        </label>
+
+        <label>Reference ID
+          <input id="reference_id" placeholder="Optional" />
+        </label>
+
+        <label>Speed
+          <input id="speed" type="number" step="any" placeholder="RPM" />
+        </label>
+
+        <label>Temperature
+          <input id="temperature" type="number" step="any" placeholder="°C" />
+        </label>
+
+        <label>Time
+          <input id="time_value" type="text" placeholder="Example: 19:25" />
+        </label>
+
+        <label>Weight
+          <input id="weight" type="number" step="any" />
+        </label>
+
+        <label>Pressure
+          <input id="pressure" type="number" step="any" />
+        </label>
+
+        <label>Volume
+          <input id="volume" type="number" step="any" />
+        </label>
+
+        <label class="wide">Extra Readings JSON
+          <textarea id="extra_json" rows="7">{}</textarea>
+        </label>
+
+      </form>
+
+      <div class="actions">
+        <button type="button" id="saveBtn">Confirm & Save</button>
+      </div>
+
+      <h3>Raw Extraction JSON</h3>
+      <pre id="rawJson"></pre>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>4. Saved Readings</h2>
+        <button type="button" id="refreshBtn">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Lab</th>
+              <th>Machine ID</th>
+              <th>Type</th>
+              <th>Sample</th>
+              <th>Speed</th>
+              <th>Temp</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="readingsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
