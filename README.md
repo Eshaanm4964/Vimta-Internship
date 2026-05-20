@@ -1,6 +1,11 @@
 # VIMTA Labs — Machine Reading System
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-vimta--internship.vercel.app-0d9488?style=for-the-badge&logo=vercel&logoColor=white)](https://vimta-internship.vercel.app/)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel)](https://vimta-internship.vercel.app/)
+
 A web-based lab instrument reading capture system with AI-powered OCR and human-in-the-loop verification.
+
+> **Live:** https://vimta-internship.vercel.app/
 
 ---
 
