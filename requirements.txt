@@ -1,12 +1,13 @@
 Flask==3.0.3
-opencv-python==4.10.0.84
+flask-cors==4.0.1
+opencv-python-headless==4.10.0.84
 numpy==1.26.4
 Werkzeug==3.0.3
-pytesseract==0.3.13
 Pillow==10.4.0
-pyzbar==0.1.9
 google-generativeai>=0.8.0
 anthropic>=0.40.0
 
-# Optional — install for PaddleOCR (secondary OCR engine):
+# Optional (local use only — not available on Vercel serverless):
+# pytesseract==0.3.13
+# pyzbar==0.1.9
 # pip install paddlepaddle paddleocr
