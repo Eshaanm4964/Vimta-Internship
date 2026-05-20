@@ -79,6 +79,10 @@
           <span>Manage Users</span>
           <span id="pendingBadge" class="nav-badge hidden">0</span>
         </button>
+        <button id="navLims" class="nav-item" onclick="showView('lims')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span>LIMS Integration</span>
+        </button>
         <button class="nav-item" onclick="openModal('addLabModal')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
           <span>Add Lab</span>
@@ -486,6 +490,86 @@
         </section>
 
       </div><!-- /viewUsers -->
+
+      <!-- ═══ LIMS INTEGRATION ═══ -->
+      <div id="viewLims" class="view hidden">
+        <div class="view-header">
+          <h1 class="view-title">LIMS Integration</h1>
+          <p class="view-sub">Push confirmed readings automatically to your Laboratory Information Management System.</p>
+        </div>
+
+        <!-- Settings card -->
+        <section class="card" style="max-width:640px;margin-bottom:24px">
+          <div class="card-header">
+            <h2 class="card-title">Connection Settings</h2>
+            <span id="limsStatusDot" class="lims-status-dot lims-off">Disabled</span>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+
+            <label class="form-label">
+              LIMS Endpoint URL
+              <input id="limsUrl" type="url" class="form-input" placeholder="https://your-lims.com/api/readings">
+            </label>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <label class="form-label">
+                Auth Header Name
+                <input id="limsAuthHeader" type="text" class="form-input" value="Authorization" placeholder="Authorization">
+              </label>
+              <label class="form-label">
+                API Key / Token
+                <input id="limsApiKey" type="password" class="form-input" placeholder="Bearer your-token…">
+              </label>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0">
+              <label class="toggle-wrap">
+                <input id="limsEnabled" type="checkbox" class="toggle-input">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="form-label" style="margin:0">Enable LIMS integration</span>
+
+              <label class="toggle-wrap" style="margin-left:24px">
+                <input id="limsAutoPush" type="checkbox" class="toggle-input" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="form-label" style="margin:0">Auto-push on confirm</span>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button class="btn btn-secondary" onclick="testLimsConnection()">Test Connection</button>
+              <button class="btn btn-primary" onclick="saveLimsConfig()">Save Settings</button>
+            </div>
+            <div id="limsTestResult" style="display:none" class="lims-test-result"></div>
+          </div>
+        </section>
+
+        <!-- Push log -->
+        <section class="card">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h2 class="card-title">Push Log</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadLimsLog()">Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Machine</th>
+                  <th>Sample</th>
+                  <th>Lab</th>
+                  <th>Status</th>
+                  <th>Pushed At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="limsLogBody">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted)">No push activity yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div><!-- /viewLims -->
 
     </div><!-- /page-body -->
   </div><!-- /main-wrap -->

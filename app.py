@@ -22,9 +22,10 @@ from flask_cors import CORS
 
 from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 from database import (
-    init_db, save_reading, get_readings, get_user_by_username, verify_password, 
-    get_labs, get_machines, get_users, create_lab, create_machine, 
-    get_machine_types, create_machine_type, create_machine_field
+    init_db, save_reading, get_readings, get_user_by_username, verify_password,
+    get_labs, get_machines, get_users, create_lab, create_machine,
+    get_machine_types, create_machine_type, create_machine_field,
+    get_lims_config, save_lims_config, update_reading_lims_status, get_lims_push_log,
 )
 from extractor import extract_from_image
 from machine_router import list_labs, list_machines, get_machine_by_id
@@ -220,7 +221,17 @@ def api_confirm():
 
     data["status"] = "confirmed"
     row_id = save_reading(data)
-    return jsonify({"message": "Reading confirmed and saved successfully", "id": row_id})
+
+    # Auto-push to LIMS if configured
+    lims_status = None
+    cfg = get_lims_config()
+    if cfg.get("enabled") == "true" and cfg.get("auto_push") == "true" and cfg.get("endpoint_url"):
+        lims_status = _push_reading_to_lims(row_id, data, cfg)
+
+    resp = {"message": "Reading confirmed and saved successfully", "id": row_id}
+    if lims_status:
+        resp["lims_push"] = lims_status
+    return jsonify(resp)
 
 
 @app.route("/api/readings", methods=["GET"])
@@ -373,6 +384,124 @@ def api_stats():
         "total_readings": len(readings),
         "total_users": len(users)
     })
+
+
+# ---------------------------------------------------------------------------
+# LIMS push helper
+# ---------------------------------------------------------------------------
+
+def _push_reading_to_lims(reading_id: int, reading_data: dict, cfg: dict) -> str:
+    """POST a reading to the external LIMS endpoint. Returns 'sent' or 'failed'."""
+    import urllib.request, urllib.error, json as _json
+    payload = {
+        "source": "vimta_lims_v1",
+        "reading_id": reading_id,
+        "lab_no": reading_data.get("lab_no"),
+        "machine_id": reading_data.get("machine_id"),
+        "machine_type": reading_data.get("machine_type"),
+        "machine_name": reading_data.get("machine_name"),
+        "sample_id": reading_data.get("sample_id"),
+        "reference_id": reading_data.get("reference_id"),
+        "readings": reading_data.get("readings", {}),
+        "units": reading_data.get("units", {}),
+    }
+    try:
+        body = _json.dumps(payload).encode()
+        req = urllib.request.Request(
+            cfg["endpoint_url"],
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                cfg.get("auth_header", "Authorization"): cfg.get("api_key", ""),
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            status_code = resp.status
+        result = "sent" if 200 <= status_code < 300 else "failed"
+    except Exception as e:
+        print(f"[LIMS] Push failed: {e}")
+        result = "failed"
+    update_reading_lims_status(reading_id, result)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# LIMS config & management routes
+# ---------------------------------------------------------------------------
+
+@app.route("/api/lims/config", methods=["GET"])
+def api_lims_config_get():
+    cfg = get_lims_config()
+    # Never expose the full API key to the frontend
+    if cfg.get("api_key"):
+        cfg["api_key_set"] = True
+        cfg["api_key"] = "••••••••"
+    else:
+        cfg["api_key_set"] = False
+    return jsonify(cfg)
+
+
+@app.route("/api/lims/config", methods=["POST"])
+def api_lims_config_save():
+    data = request.get_json(silent=True) or {}
+    existing = get_lims_config()
+    # Keep existing key if client sends masked value
+    api_key = data.get("api_key", "")
+    if api_key.startswith("••"):
+        api_key = existing.get("api_key", "")
+    save_lims_config(
+        endpoint_url=data.get("endpoint_url", ""),
+        auth_header=data.get("auth_header", "Authorization"),
+        api_key=api_key,
+        auto_push=data.get("auto_push", "true"),
+        enabled=data.get("enabled", "false"),
+    )
+    return jsonify({"message": "LIMS configuration saved"})
+
+
+@app.route("/api/lims/test", methods=["POST"])
+def api_lims_test():
+    data = request.get_json(silent=True) or {}
+    url = data.get("endpoint_url", "")
+    if not url:
+        return jsonify({"success": False, "error": "No endpoint URL provided"}), 400
+    import urllib.request, urllib.error
+    try:
+        req = urllib.request.Request(
+            url,
+            data=b'{"test":true}',
+            headers={
+                "Content-Type": "application/json",
+                data.get("auth_header", "Authorization"): data.get("api_key", ""),
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            code = resp.status
+        return jsonify({"success": 200 <= code < 300, "status_code": code})
+    except urllib.error.HTTPError as e:
+        return jsonify({"success": False, "status_code": e.code, "error": str(e)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route("/api/lims/retry/<int:reading_id>", methods=["POST"])
+def api_lims_retry(reading_id):
+    readings = get_readings()
+    match = next((r for r in readings if r["id"] == reading_id), None)
+    if not match:
+        return jsonify({"error": "Reading not found"}), 404
+    cfg = get_lims_config()
+    if not cfg.get("endpoint_url"):
+        return jsonify({"error": "LIMS not configured"}), 400
+    result = _push_reading_to_lims(reading_id, match, cfg)
+    return jsonify({"status": result})
+
+
+@app.route("/api/lims/log", methods=["GET"])
+def api_lims_log():
+    return jsonify(get_lims_push_log())
 
 
 if __name__ == "__main__":

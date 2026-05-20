@@ -45,24 +45,27 @@ function showToast(msg, type = "info") {
 /* ════════════════════════════
    VIEW ROUTER
 ════════════════════════════ */
-const viewTitles = { dashboard: "Dashboard", capture: "Capture Reading", readings: "Confirmed Readings", users: "Manage Users" };
+const viewTitles = { dashboard: "Dashboard", capture: "Capture Reading", readings: "Confirmed Readings", users: "Manage Users", lims: "LIMS Integration" };
 
 function showView(name) {
-  ["dashboard", "capture", "readings", "users"].forEach(v => {
-    $("view" + v.charAt(0).toUpperCase() + v.slice(1)).classList.add("hidden");
+  ["dashboard", "capture", "readings", "users", "lims"].forEach(v => {
+    const view = $("view" + v.charAt(0).toUpperCase() + v.slice(1));
+    if (view) view.classList.add("hidden");
     const btn = $("nav" + v.charAt(0).toUpperCase() + v.slice(1));
     if (btn) btn.classList.remove("active");
   });
 
-  $("view" + name.charAt(0).toUpperCase() + name.slice(1)).classList.remove("hidden");
+  const active = $("view" + name.charAt(0).toUpperCase() + name.slice(1));
+  if (active) active.classList.remove("hidden");
   const btn = $("nav" + name.charAt(0).toUpperCase() + name.slice(1));
   if (btn) btn.classList.add("active");
 
   $("topbarTitle").textContent = viewTitles[name] || name;
 
-  if (name === "readings") loadReadings();
-  if (name === "users")    { loadUsersData(); loadPendingUsers(); }
+  if (name === "readings")  loadReadings();
+  if (name === "users")     { loadUsersData(); loadPendingUsers(); }
   if (name === "dashboard") loadStats();
+  if (name === "lims")      { loadLimsConfig(); loadLimsLog(); }
 }
 
 /* ════════════════════════════
@@ -746,3 +749,137 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setStep(1);
 });
+
+/* ════════════════════════════
+   LIMS INTEGRATION
+════════════════════════════ */
+
+async function loadLimsConfig() {
+  try {
+    const cfg = await fetch("/api/lims/config").then(r => r.json());
+    $("limsUrl").value         = cfg.endpoint_url   || "";
+    $("limsAuthHeader").value  = cfg.auth_header     || "Authorization";
+    $("limsApiKey").value      = cfg.api_key_set ? "••••••••" : "";
+    $("limsEnabled").checked   = cfg.enabled  === "true";
+    $("limsAutoPush").checked  = cfg.auto_push !== "false";
+    updateLimsStatusDot(cfg.enabled === "true");
+  } catch(e) {
+    console.error("loadLimsConfig:", e);
+  }
+}
+
+function updateLimsStatusDot(enabled) {
+  const dot = $("limsStatusDot");
+  if (!dot) return;
+  if (enabled) {
+    dot.className = "lims-status-dot lims-on";
+    dot.textContent = "Enabled";
+  } else {
+    dot.className = "lims-status-dot lims-off";
+    dot.textContent = "Disabled";
+  }
+}
+
+async function saveLimsConfig() {
+  const payload = {
+    endpoint_url: $("limsUrl").value.trim(),
+    auth_header:  $("limsAuthHeader").value.trim() || "Authorization",
+    api_key:      $("limsApiKey").value,
+    auto_push:    $("limsAutoPush").checked ? "true" : "false",
+    enabled:      $("limsEnabled").checked  ? "true" : "false",
+  };
+  try {
+    const res = await fetch("/api/lims/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast("LIMS settings saved", "success");
+      updateLimsStatusDot($("limsEnabled").checked);
+    } else {
+      showToast(data.error || "Save failed", "error");
+    }
+  } catch(e) {
+    showToast("Save failed: " + e.message, "error");
+  }
+}
+
+async function testLimsConnection() {
+  const url = $("limsUrl").value.trim();
+  if (!url) { showToast("Enter a LIMS endpoint URL first", "error"); return; }
+  const result = $("limsTestResult");
+  result.style.display = "block";
+  result.className = "lims-test-result";
+  result.textContent = "Testing connection…";
+  try {
+    const res = await fetch("/api/lims/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        endpoint_url: url,
+        auth_header:  $("limsAuthHeader").value.trim() || "Authorization",
+        api_key:      $("limsApiKey").value,
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      result.className = "lims-test-result lims-test-ok";
+      result.textContent = `Connection successful (HTTP ${data.status_code})`;
+    } else {
+      result.className = "lims-test-result lims-test-err";
+      result.textContent = `Failed: ${data.error || "HTTP " + data.status_code}`;
+    }
+  } catch(e) {
+    result.className = "lims-test-result lims-test-err";
+    result.textContent = "Error: " + e.message;
+  }
+}
+
+async function loadLimsLog() {
+  try {
+    const rows = await fetch("/api/lims/log").then(r => r.json());
+    const tbody = $("limsLogBody");
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No push activity yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => {
+      const statusBadge = r.lims_push_status === "sent"
+        ? `<span class="lims-push-sent">Sent</span>`
+        : r.lims_push_status === "failed"
+          ? `<span class="lims-push-failed">Failed</span>`
+          : `<span class="lims-push-pending">${r.lims_push_status || "—"}</span>`;
+      const retryBtn = r.lims_push_status === "failed"
+        ? `<button class="btn btn-secondary btn-sm" onclick="retryLimsPush(${r.id})">Retry</button>`
+        : "—";
+      return `<tr>
+        <td>${r.id}</td>
+        <td>${r.machine_id || "—"}</td>
+        <td>${r.sample_id || "—"}</td>
+        <td>${r.lab_no || "—"}</td>
+        <td>${statusBadge}</td>
+        <td>${r.lims_pushed_at || "—"}</td>
+        <td>${retryBtn}</td>
+      </tr>`;
+    }).join("");
+  } catch(e) {
+    console.error("loadLimsLog:", e);
+  }
+}
+
+async function retryLimsPush(readingId) {
+  try {
+    const res = await fetch(`/api/lims/retry/${readingId}`, { method: "POST" });
+    const data = await res.json();
+    if (data.status === "sent") {
+      showToast("Push successful", "success");
+    } else {
+      showToast("Push failed — check LIMS endpoint", "error");
+    }
+    loadLimsLog();
+  } catch(e) {
+    showToast("Retry error: " + e.message, "error");
+  }
+}

@@ -115,9 +115,21 @@ def init_db():
     )
     """)
     
+    # Create lims_config table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS lims_config (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """)
+
     if not _column_exists(cur, "machine_readings", "lab_no"):
         cur.execute("ALTER TABLE machine_readings ADD COLUMN lab_no TEXT")
-    
+    if not _column_exists(cur, "machine_readings", "lims_push_status"):
+        cur.execute("ALTER TABLE machine_readings ADD COLUMN lims_push_status TEXT")
+    if not _column_exists(cur, "machine_readings", "lims_pushed_at"):
+        cur.execute("ALTER TABLE machine_readings ADD COLUMN lims_pushed_at TEXT")
+
     conn.commit()
     conn.close()
 
@@ -430,3 +442,67 @@ def check_user_approval(username: str):
     if not row['is_approved']:
         return False, "Account pending approval"
     return True, "Approved"
+
+
+# ---------------------------------------------------------------------------
+# LIMS configuration
+# ---------------------------------------------------------------------------
+
+def get_lims_config() -> dict:
+    conn = get_connection()
+    cur = conn.cursor()
+    rows = cur.execute("SELECT key, value FROM lims_config").fetchall()
+    conn.close()
+    cfg = {row["key"]: row["value"] for row in rows}
+    return {
+        "endpoint_url": cfg.get("endpoint_url", ""),
+        "auth_header": cfg.get("auth_header", "Authorization"),
+        "api_key": cfg.get("api_key", ""),
+        "auto_push": cfg.get("auto_push", "true"),
+        "enabled": cfg.get("enabled", "false"),
+    }
+
+
+def save_lims_config(endpoint_url: str, auth_header: str, api_key: str,
+                     auto_push: str, enabled: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    for key, value in [
+        ("endpoint_url", endpoint_url),
+        ("auth_header", auth_header),
+        ("api_key", api_key),
+        ("auto_push", auto_push),
+        ("enabled", enabled),
+    ]:
+        cur.execute(
+            "INSERT INTO lims_config (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value)
+        )
+    conn.commit()
+    conn.close()
+
+
+def update_reading_lims_status(reading_id: int, status: str):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE machine_readings SET lims_push_status = ?, lims_pushed_at = ? WHERE id = ?",
+        (status, get_current_ist_time(), reading_id)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_lims_push_log(limit: int = 50) -> list:
+    conn = get_connection()
+    cur = conn.cursor()
+    rows = cur.execute(
+        """SELECT id, machine_id, sample_id, lab_no, lims_push_status, lims_pushed_at, created_at
+           FROM machine_readings
+           WHERE lims_push_status IS NOT NULL
+           ORDER BY lims_pushed_at DESC LIMIT ?""",
+        (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
