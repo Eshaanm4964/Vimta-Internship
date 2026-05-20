@@ -32,18 +32,10 @@ venv.bak/
 *.db
 *.sqlite
 *.sqlite3
-machine_reading.db
 
 # Node.js
 node_modules/
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Electron
-electron_app/dist/
-electron_app/build/
-electron_app/node_modules/
 
 # IDE
 .vscode/

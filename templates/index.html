@@ -3,165 +3,601 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Machine Reading Automation</title>
+  <title>Machine Reading Automation · Vimta Labs LIMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
 </head>
-
 <body>
-  <main class="page">
 
-    <section class="hero">
+<!-- ═══════════════════════════════
+     LOGIN PAGE
+═══════════════════════════════ -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="/static/vimta_logo.png" alt="Vimta Labs" class="login-logo-img" />
+    </div>
+    <h2 class="login-title">Sign in to LIMS</h2>
+    <p class="login-sub">Machine Reading Automation System</p>
+    <div class="role-tabs">
+      <button id="adminLoginBtn" class="role-tab active" onclick="setLoginRole('admin')">Admin</button>
+      <button id="userLoginBtn"  class="role-tab"        onclick="setLoginRole('user')">User</button>
+    </div>
+    <div class="login-input-wrap">
+      <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <input id="username" class="login-input" type="text" placeholder="User ID" autocomplete="username" />
+    </div>
+    <div class="login-input-wrap">
+      <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      <input id="password" class="login-input" type="password" placeholder="Password" autocomplete="current-password" />
+    </div>
+    <div id="loginError" class="login-error"></div>
+    <button id="loginBtn" class="login-btn">Sign In</button>
+    <div class="login-signup-row">
+      Don't have an account?
+      <button class="login-link" onclick="openModal('signupModal')">Request Access</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     APP SHELL (hidden until login)
+═══════════════════════════════ -->
+<div id="appShell" class="app-shell hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/static/vimta_logo.png" alt="Vimta Labs" class="sidebar-logo" />
       <div>
-        <p class="eyebrow">Vimta Labs • LIMS Automation</p>
-        <h1>AI-Based Machine Reading Automation System</h1>
-        <p>
-          Enter lab number, select the machine ID, upload a photo, extract readings,
-          verify once, and save confirmed data for LIMS.
-        </p>
+        <div class="brand-name">Vimta Labs</div>
+        <div class="brand-sub">LIMS Automation</div>
       </div>
-    </section>
+    </div>
 
-    <section class="card">
-      <h2>1. Lab & Machine Selection</h2>
+    <nav class="sidebar-nav">
+      <button id="navDashboard" class="nav-item" onclick="showView('dashboard')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button id="navCapture" class="nav-item" onclick="showView('capture')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Capture Reading</span>
+      </button>
+      <button id="navReadings" class="nav-item" onclick="showView('readings')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span>Readings</span>
+      </button>
 
-      <div class="form-grid">
-        <label>Lab No
-          <select id="lab_no" required>
-            <option value="">Select Lab No</option>
-          </select>
-        </label>
-
-        <label>Machine ID
-          <select id="machine_id_select" required disabled>
-            <option value="">Select Lab No first</option>
-          </select>
-        </label>
-
-        <label class="wide">Selected Machine Details
-          <input id="machine_details" readonly placeholder="Machine details will appear here" />
-        </label>
+      <!-- Admin only -->
+      <div id="adminNav" class="hidden">
+        <div class="nav-section">Administration</div>
+        <button id="navUsers" class="nav-item" onclick="showView('users')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span>Manage Users</span>
+          <span id="pendingBadge" class="nav-badge hidden">0</span>
+        </button>
+        <button class="nav-item" onclick="openModal('addLabModal')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <span>Add Lab</span>
+        </button>
+        <button class="nav-item" onclick="openModal('addMachineModal')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+          <span>Add Instrument</span>
+        </button>
       </div>
-    </section>
+    </nav>
 
-    <section class="card">
-      <h2>2. Upload Machine Photo <span style="color: red;">*</span></h2>
+    <div class="sidebar-user">
+      <div class="user-row">
+        <div class="user-avatar" id="userInitials">—</div>
+        <div>
+          <div class="user-name" id="userNameDisplay">—</div>
+          <div class="user-role" id="userRoleDisplay">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logoutBtn" onclick="logout()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
 
-      <div class="warning">
-        ⚠️ Photo upload is MANDATORY. You must upload a clear photo of the machine display to extract readings.
+  <!-- MAIN AREA -->
+  <div class="main-wrap">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <img src="/static/vimta_logo.png" alt="Vimta Labs" class="topbar-logo" />
+        <div>
+          <div class="topbar-title" id="topbarTitle">Dashboard</div>
+          <div class="topbar-sub">Vimta Labs LIMS · Machine Reading Automation</div>
+        </div>
+      </div>
+      <div class="status-dot">
+        <span class="dot-pulse"></span>
+        LIMS Online
+      </div>
+    </header>
+
+    <div class="page-body">
+
+      <!-- ═══ VIEW: DASHBOARD ═══ -->
+      <div id="viewDashboard" class="view hidden">
+        <div id="adminStats" class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fdfa;color:#0d9488;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <div class="stat-label">Total Readings</div>
+            <div class="stat-value" id="statReadings">—</div>
+            <div class="stat-hint">All captured records</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#eff6ff;color:#2563eb;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </div>
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="statUsers">—</div>
+            <div class="stat-hint">Registered accounts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#f5f3ff;color:#7c3aed;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div class="stat-label">Labs</div>
+            <div class="stat-value" id="statLabs">—</div>
+            <div class="stat-hint">Active laboratories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7ed;color:#ea580c;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+            </div>
+            <div class="stat-label">Instruments</div>
+            <div class="stat-value" id="statMachines">—</div>
+            <div class="stat-hint">Registered machines</div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="quick-actions">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-step-tag">→</div>
+              <div class="panel-head-text">
+                <h2 class="panel-title">Quick Actions</h2>
+                <p class="panel-desc">Common tasks</p>
+              </div>
+            </div>
+            <div class="panel-body quick-grid">
+              <button class="quick-btn" onclick="showView('capture')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                New Capture
+              </button>
+              <button class="quick-btn" onclick="showView('readings')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                View Readings
+              </button>
+              <button class="quick-btn admin-only" onclick="showView('users')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Manage Users
+              </button>
+              <button class="quick-btn admin-only" onclick="openModal('addLabModal')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Lab
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="upload-box">
-        <input type="file" id="imageInput" accept="image/*" capture="environment" required />
-        <button type="button" id="extractBtn">Extract Values</button>
+      <!-- ═══ VIEW: CAPTURE ═══ -->
+      <div id="viewCapture" class="view hidden">
+
+        <!-- Workflow steps -->
+        <div class="progress-wrap">
+          <div class="progress-inner">
+            <div class="step active" id="wfStep1"><div class="step-dot">1</div><span class="step-label">Lab &amp; Machine</span></div>
+            <div class="step-connector"></div>
+            <div class="step" id="wfStep2"><div class="step-dot">2</div><span class="step-label">Upload Photo</span></div>
+            <div class="step-connector"></div>
+            <div class="step" id="wfStep3"><div class="step-dot">3</div><span class="step-label">Verify &amp; Save</span></div>
+            <div class="step-connector"></div>
+            <div class="step" id="wfStep4"><div class="step-dot">4</div><span class="step-label">Done</span></div>
+          </div>
+        </div>
+
+        <!-- Step 1: Lab & Machine -->
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-step-tag">01</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">Lab &amp; Machine Selection</h2>
+              <p class="panel-desc">Select the lab and identify the instrument to be read</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label" for="lab_no">Lab Number</label>
+                <select id="lab_no" class="field-ctrl" required>
+                  <option value="">— Select Lab —</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="machine_id_select">Machine ID</label>
+                <select id="machine_id_select" class="field-ctrl" required disabled>
+                  <option value="">Select lab first</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group" style="margin-top:14px;">
+              <label class="field-label" for="machine_details">Instrument Details</label>
+              <input id="machine_details" class="field-ctrl field-readonly" readonly
+                     placeholder="Machine type, group code, and measurement fields will appear here" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2: Upload -->
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-step-tag">02</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">Upload Machine Photo</h2>
+              <p class="panel-desc">Photograph must clearly show the instrument display panel</p>
+            </div>
+            <span class="badge badge-danger">Required</span>
+          </div>
+          <div class="panel-body">
+            <div class="alert alert-warn">
+              <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+              <span>Photo upload is mandatory. Ensure the display is fully in frame, in focus, and free of glare.</span>
+            </div>
+            <div class="upload-grid">
+              <div class="dropzone" id="dropzone">
+                <input type="file" id="imageInput" accept="image/*" capture="environment" />
+                <div class="dropzone-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="10" width="36" height="28" rx="3"/>
+                    <path d="M6 32l10-10 8 8 6-6 12 12"/>
+                    <circle cx="16" cy="20" r="3"/>
+                  </svg>
+                </div>
+                <div class="dropzone-primary">Drag &amp; drop image here</div>
+                <div class="dropzone-secondary">or <span class="dropzone-cta">browse files</span></div>
+                <div class="dropzone-hint">PNG · JPG · JPEG · WEBP &nbsp;·&nbsp; max 10 MB</div>
+              </div>
+              <div class="preview-panel" id="previewPane">
+                <div class="preview-bar">
+                  <span>Image Preview</span>
+                  <button type="button" class="btn-ghost-sm" id="clearImageBtn">✕ Clear</button>
+                </div>
+                <img id="previewImage" class="preview-img" alt="Uploaded preview" />
+              </div>
+            </div>
+            <div class="upload-actions">
+              <button type="button" id="extractBtn" class="btn btn-primary">
+                <span class="spinner hidden" id="extractSpinner"></span>
+                <svg id="extractIcon" class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3.5 2.75a.75.75 0 00-1.5 0v14.5a.75.75 0 001.5 0v-4.392l1.657-.348a6.449 6.449 0 014.271.572 7.948 7.948 0 005.965.524l2.078-.64A.75.75 0 0018 12.25v-8.5a.75.75 0 00-.904-.734l-2.38.501a7.25 7.25 0 01-4.186-.363l-.502-.186a8.75 8.75 0 00-5.053-.439l-1.475.31V2.75z"/>
+                </svg>
+                <span id="extractLabel">Extract Readings</span>
+              </button>
+            </div>
+            <div id="message" class="status-msg"></div>
+          </div>
+        </section>
+
+        <!-- Step 3: Verify & Save -->
+        <section class="panel hidden" id="confirmSection">
+          <div class="panel-head">
+            <div class="panel-step-tag">03</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">Verify Extracted Values</h2>
+              <p class="panel-desc">Review AI-extracted readings — correct any errors before confirming</p>
+            </div>
+            <span class="badge badge-purple">Human Review Required</span>
+          </div>
+          <div class="panel-body">
+            <div id="ocrWarning"     class="alert alert-danger hidden"></div>
+            <div id="qualityWarning" class="alert alert-warn hidden"></div>
+            <form id="confirmForm">
+              <div class="form-section">
+                <div class="form-section-head">Instrument Identification</div>
+                <div class="field-row field-row-4">
+                  <div class="field-group">
+                    <label class="field-label" for="lab_no_confirm">Lab Number</label>
+                    <input id="lab_no_confirm" class="field-ctrl" required />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="machine_id">Machine ID</label>
+                    <input id="machine_id" class="field-ctrl" required />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="machine_type">Machine Type</label>
+                    <input id="machine_type" class="field-ctrl field-readonly" readonly />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="machine_name">Machine Name</label>
+                    <input id="machine_name" class="field-ctrl field-readonly" readonly />
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-section-head">Sample Information</div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label field-required" for="sample_id">Sample ID / Sample No</label>
+                    <input id="sample_id" class="field-ctrl" required placeholder="Enter sample number" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="reference_id">Reference ID</label>
+                    <input id="reference_id" class="field-ctrl" placeholder="Optional" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-section-head">
+                  Extracted Readings
+                  <span class="editable-tag">Editable — correct any misread values</span>
+                </div>
+                <div class="field-row field-row-3">
+                  <div class="field-group">
+                    <label class="field-label" for="speed">Speed <span class="unit-tag">RPM</span></label>
+                    <input id="speed" class="field-ctrl field-value" type="number" step="any" placeholder="—" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="temperature">Temperature <span class="unit-tag">°C</span></label>
+                    <input id="temperature" class="field-ctrl field-value" type="number" step="any" placeholder="—" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="time_value">Time <span class="unit-tag">min</span></label>
+                    <input id="time_value" class="field-ctrl field-value" type="text" placeholder="e.g. 19:25" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="weight">Weight <span class="unit-tag">g</span></label>
+                    <input id="weight" class="field-ctrl field-value" type="number" step="any" placeholder="—" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="pressure">Pressure <span class="unit-tag">bar</span></label>
+                    <input id="pressure" class="field-ctrl field-value" type="number" step="any" placeholder="—" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="volume">Volume <span class="unit-tag">mL</span></label>
+                    <input id="volume" class="field-ctrl field-value" type="number" step="any" placeholder="—" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-section-head">
+                  Additional Readings
+                  <span class="editable-tag">JSON — machine-specific fields</span>
+                </div>
+                <textarea id="extra_json" class="field-ctrl field-mono" rows="5">{}</textarea>
+              </div>
+            </form>
+            <div class="confirm-bar">
+              <button type="button" id="saveBtn" class="btn btn-success btn-lg">
+                <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+                Confirm &amp; Save Reading
+              </button>
+              <span class="confirm-note">Data is stored only after this confirmation</span>
+            </div>
+            <details class="json-panel">
+              <summary>Raw Extraction JSON</summary>
+              <pre id="rawJson"></pre>
+            </details>
+          </div>
+        </section>
+
+      </div><!-- /viewCapture -->
+
+      <!-- ═══ VIEW: READINGS ═══ -->
+      <div id="viewReadings" class="view hidden">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-step-tag">04</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">Confirmed Readings</h2>
+              <p class="panel-desc">All verified and saved instrument readings</p>
+            </div>
+            <button type="button" id="refreshBtn" class="btn btn-secondary btn-sm" onclick="loadReadings()">
+              <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.389zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div class="panel-body panel-body-flush">
+            <div class="tbl-wrap">
+              <table class="data-tbl">
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Lab</th><th>Machine ID</th><th>Type</th>
+                    <th>Sample</th><th>Speed</th><th>Temp</th><th>Time</th>
+                    <th>Status</th><th>Recorded (IST)</th>
+                  </tr>
+                </thead>
+                <tbody id="readingsBody">
+                  <tr class="tbl-empty-row"><td colspan="10">No readings yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <p id="message"></p>
-      <img id="previewImage" class="preview-image" alt="Uploaded preview" />
-    </section>
+      <!-- ═══ VIEW: USERS (admin) ═══ -->
+      <div id="viewUsers" class="view hidden">
 
-    <section class="card hidden" id="confirmSection">
-      <h2>3. Verify Extracted Values</h2>
+        <!-- Pending approvals -->
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-step-tag">!</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">Pending Approvals</h2>
+              <p class="panel-desc">New accounts awaiting admin review</p>
+            </div>
+          </div>
+          <div class="panel-body panel-body-flush">
+            <div class="tbl-wrap">
+              <table class="data-tbl">
+                <thead>
+                  <tr><th>User ID</th><th>Name</th><th>Email</th><th>Role</th><th>Requested</th><th>Action</th></tr>
+                </thead>
+                <tbody id="pendingUsersTable">
+                  <tr class="tbl-empty-row"><td colspan="6">No pending approvals</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-      <div class="warning">
-        Scientist must confirm/edit values before saving. Nothing is saved automatically.
+        <!-- All users -->
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-step-tag">02</div>
+            <div class="panel-head-text">
+              <h2 class="panel-title">All Users</h2>
+              <p class="panel-desc">
+                Total: <strong id="totalUsersCount">0</strong> &nbsp;·&nbsp;
+                Active: <strong id="activeUsersCount">0</strong>
+              </p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadUsersData()">
+              <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.389zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd"/></svg>
+              Refresh
+            </button>
+          </div>
+          <div class="panel-body panel-body-flush">
+            <div class="tbl-wrap">
+              <table class="data-tbl">
+                <thead>
+                  <tr><th>User ID</th><th>Name</th><th>Email</th><th>Role</th><th>Readings</th><th>Status</th></tr>
+                </thead>
+                <tbody id="usersTable">
+                  <tr class="tbl-empty-row"><td colspan="6">No users found</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /viewUsers -->
+
+    </div><!-- /page-body -->
+  </div><!-- /main-wrap -->
+</div><!-- /appShell -->
+
+<!-- ═══════════════════════════════
+     MODALS
+═══════════════════════════════ -->
+<div id="modalOverlay" class="modal-overlay hidden" onclick="closeModalOnOverlay(event)">
+
+  <!-- Signup -->
+  <div id="signupModal" class="modal-card hidden">
+    <h3 class="modal-title">Request Account Access</h3>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Full Name</label>
+        <input id="signupName" class="field-ctrl" placeholder="Your full name" />
       </div>
-
-      <div id="ocrWarning" class="danger hidden"></div>
-      <div id="qualityWarning" class="warning hidden"></div>
-
-      <form id="confirmForm" class="form-grid">
-
-        <label>Lab No
-          <input id="lab_no_confirm" required />
-        </label>
-
-        <label>Machine ID
-          <input id="machine_id" required />
-        </label>
-
-        <label>Machine Type
-          <input id="machine_type" />
-        </label>
-
-        <label>Machine Name
-          <input id="machine_name" />
-        </label>
-
-        <label>Sample ID / Sample No
-          <input id="sample_id" required placeholder="Enter sample no" />
-        </label>
-
-        <label>Reference ID
-          <input id="reference_id" placeholder="Optional" />
-        </label>
-
-        <label>Speed
-          <input id="speed" type="number" step="any" placeholder="RPM" />
-        </label>
-
-        <label>Temperature
-          <input id="temperature" type="number" step="any" placeholder="°C" />
-        </label>
-
-        <label>Time
-          <input id="time_value" type="text" placeholder="Example: 19:25" />
-        </label>
-
-        <label>Weight
-          <input id="weight" type="number" step="any" />
-        </label>
-
-        <label>Pressure
-          <input id="pressure" type="number" step="any" />
-        </label>
-
-        <label>Volume
-          <input id="volume" type="number" step="any" />
-        </label>
-
-        <label class="wide">Extra Readings JSON
-          <textarea id="extra_json" rows="7">{}</textarea>
-        </label>
-
-      </form>
-
-      <div class="actions">
-        <button type="button" id="saveBtn">Confirm & Save</button>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input id="signupEmail" class="field-ctrl" type="email" placeholder="you@vimtalabs.com" />
       </div>
-
-      <h3>Raw Extraction JSON</h3>
-      <pre id="rawJson"></pre>
-    </section>
-
-    <section class="card">
-      <div class="section-header">
-        <h2>4. Saved Readings</h2>
-        <button type="button" id="refreshBtn">Refresh</button>
+    </div>
+    <div class="field-row" style="margin-top:12px;">
+      <div class="field-group">
+        <label class="field-label">User ID</label>
+        <input id="signupUserId" class="field-ctrl" placeholder="Unique login ID" />
       </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Lab</th>
-              <th>Machine ID</th>
-              <th>Type</th>
-              <th>Sample</th>
-              <th>Speed</th>
-              <th>Temp</th>
-              <th>Time</th>
-              <th>Status</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody id="readingsBody"></tbody>
-        </table>
+      <div class="field-group">
+        <label class="field-label">Role</label>
+        <select id="signupRole" class="field-ctrl">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
       </div>
-    </section>
+    </div>
+    <div class="field-row" style="margin-top:12px;">
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input id="signupPassword" class="field-ctrl" type="password" placeholder="Min 6 characters" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Confirm Password</label>
+        <input id="signupConfirmPassword" class="field-ctrl" type="password" placeholder="Repeat password" />
+      </div>
+    </div>
+    <div id="signupError" class="login-error" style="display:none;margin-top:12px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button id="signupBtn" class="btn btn-primary" onclick="doSignup()">Submit Request</button>
+    </div>
+  </div>
 
-  </main>
+  <!-- Add Lab -->
+  <div id="addLabModal" class="modal-card hidden">
+    <h3 class="modal-title">Register New Lab</h3>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Lab Number</label>
+        <input id="newLabNo" class="field-ctrl" placeholder="e.g. CL11" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Lab Name</label>
+        <input id="newLabName" class="field-ctrl" placeholder="e.g. Chemistry Lab 11" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button id="saveLabBtn" class="btn btn-primary" onclick="saveLab()">Save Lab</button>
+    </div>
+  </div>
 
-  <script src="/static/script.js"></script>
+  <!-- Add Machine -->
+  <div id="addMachineModal" class="modal-card hidden">
+    <h3 class="modal-title">Onboard New Instrument</h3>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Lab</label>
+        <select id="newMachineLab" class="field-ctrl"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Machine ID</label>
+        <input id="newMachineId" class="field-ctrl" placeholder="e.g. VLL/CEN/049" />
+      </div>
+    </div>
+    <div class="field-group" style="margin-top:12px;">
+      <label class="field-label">Machine Name</label>
+      <input id="newMachineName" class="field-ctrl" placeholder="e.g. Centrifuge Model XR" />
+    </div>
+    <div style="margin-top:16px;">
+      <div class="form-section-head" style="margin-bottom:10px;">
+        Measurement Fields
+        <button type="button" class="btn btn-secondary btn-sm" style="float:right;" id="addFieldBtn" onclick="addMachineField()">+ Add Field</button>
+      </div>
+      <div id="machineFieldsList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button id="saveMachineBtn" class="btn btn-primary" onclick="saveMachine()">Save Instrument</button>
+    </div>
+  </div>
+
+</div><!-- /modalOverlay -->
+
+<!-- Toast -->
+<div id="toast">
+  <div id="toastBody">
+    <div id="toastBar" class="toast-bar"></div>
+    <span id="toastMsg"></span>
+  </div>
+</div>
+
+<script src="/static/script.js"></script>
 </body>
 </html>
