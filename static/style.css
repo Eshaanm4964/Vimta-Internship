@@ -1503,6 +1503,8 @@ body { display: block; }
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
+.ai-chat-logo { height: 36px; width: auto; max-width: 160px; object-fit: contain; }
+
 .ai-chat-avatar {
   width: 38px;
   height: 38px;
