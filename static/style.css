@@ -947,7 +947,7 @@ body { display: block; }
 /* ── Sidebar ── */
 .sidebar {
   width: 240px;
-  background: var(--navy);
+  background: #064e3b;
   border-right: 1px solid rgba(255,255,255,.06);
   display: flex;
   flex-direction: column;
@@ -1090,8 +1090,8 @@ body { display: block; }
 }
 .app-bg-logo {
   position: absolute;
-  opacity: 0.045;
-  filter: saturate(0.3);
+  opacity: 0.1;
+  filter: saturate(0.5);
   object-fit: contain;
 }
 .app-bg-logo-1 {
@@ -1236,8 +1236,8 @@ body { display: block; }
 
 .login-bg-logo {
   position: absolute;
-  opacity: 0.07;
-  filter: saturate(0.4);
+  opacity: 0.1;
+  filter: saturate(0.5);
   object-fit: contain;
 }
 
