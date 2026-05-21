@@ -138,47 +138,6 @@
       </div>
     </header>
 
-    <!-- AI CHAT PANEL -->
-    <div id="aiChatPanel" class="ai-chat-panel hidden">
-      <div class="ai-chat-header">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="ai-chat-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2C6.48 2 2 6.03 2 11c0 2.7 1.18 5.12 3.07 6.83L4 22l4.5-1.5A10.07 10.07 0 0012 21c5.52 0 10-4.03 10-9s-4.48-9-10-9z"/>
-            </svg>
-          </div>
-          <div>
-            <div class="ai-chat-name">Vimta AI Assistant</div>
-            <div class="ai-chat-status">Powered by Gemini · RAG</div>
-          </div>
-        </div>
-        <button class="ai-chat-close" onclick="toggleChat()">✕</button>
-      </div>
-      <div id="aiChatMessages" class="ai-chat-messages">
-        <div class="ai-msg ai-msg-bot">
-          <div class="ai-msg-bubble">
-            Hi! I'm your Vimta Labs AI assistant. I can help you with:<br><br>
-            • How to capture machine readings<br>
-            • Managing labs and instruments<br>
-            • LIMS integration setup<br>
-            • Information about Vimta Labs<br><br>
-            Ask me anything!
-          </div>
-        </div>
-      </div>
-      <div class="ai-chat-suggestions">
-        <button class="ai-suggestion" onclick="sendSuggestion('How do I capture a reading?')">How do I capture a reading?</button>
-        <button class="ai-suggestion" onclick="sendSuggestion('What is Vimta Labs?')">What is Vimta Labs?</button>
-        <button class="ai-suggestion" onclick="sendSuggestion('How do I add a new instrument?')">Add a new instrument</button>
-      </div>
-      <div class="ai-chat-input-row">
-        <input id="aiChatInput" class="ai-chat-input" type="text" placeholder="Ask a question…" maxlength="1000" />
-        <button id="aiChatSend" class="ai-chat-send" onclick="sendChatMessage()">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
-        </button>
-      </div>
-    </div>
-
     <div class="page-body">
 
       <!-- ═══ VIEW: DASHBOARD ═══ -->
@@ -735,5 +694,69 @@
 </div>
 
 <script src="/static/script.js"></script>
+
+<!-- ═══════════════════════════════
+     AI CHAT SIDEBAR
+═══════════════════════════════ -->
+<div id="aiChatBackdrop" class="ai-chat-backdrop" onclick="toggleChat()"></div>
+
+<aside id="aiChatPanel" class="ai-chat-sidebar">
+
+  <!-- Header -->
+  <div class="ai-chat-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="ai-chat-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.7 1.18 5.12 3.07 6.83L4 22l4.5-1.5A10.07 10.07 0 0012 21c5.52 0 10-4.03 10-9s-4.48-9-10-9z"/>
+          <circle cx="8.5" cy="11" r="1" fill="currentColor"/>
+          <circle cx="12" cy="11" r="1" fill="currentColor"/>
+          <circle cx="15.5" cy="11" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <div class="ai-chat-name">Vimta AI Assistant</div>
+        <div class="ai-chat-status">
+          <span class="ai-online-dot"></span>
+          Powered by Groq · RAG
+        </div>
+      </div>
+    </div>
+    <button class="ai-chat-close" onclick="toggleChat()" title="Close">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div id="aiChatMessages" class="ai-chat-messages">
+    <div class="ai-msg ai-msg-bot">
+      <div class="ai-msg-bubble">
+        Hi! I'm your Vimta Labs AI assistant. I can help you with:<br><br>
+        • How to capture machine readings<br>
+        • Managing labs and instruments<br>
+        • LIMS integration setup<br>
+        • Information about Vimta Labs<br><br>
+        Ask me anything!
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestion chips -->
+  <div class="ai-chat-suggestions" id="aiSuggestions">
+    <button class="ai-suggestion" onclick="sendSuggestion('How do I capture a reading?')">How do I capture a reading?</button>
+    <button class="ai-suggestion" onclick="sendSuggestion('What is Vimta Labs?')">What is Vimta Labs?</button>
+    <button class="ai-suggestion" onclick="sendSuggestion('How do I add a new instrument?')">Add instrument</button>
+    <button class="ai-suggestion" onclick="sendSuggestion('How does LIMS integration work?')">LIMS integration</button>
+  </div>
+
+  <!-- Input -->
+  <div class="ai-chat-input-row">
+    <input id="aiChatInput" class="ai-chat-input" type="text" placeholder="Ask a question…" maxlength="1000" />
+    <button id="aiChatSend" class="ai-chat-send" onclick="sendChatMessage()">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+    </button>
+  </div>
+
+</aside>
+
 </body>
 </html>

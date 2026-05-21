@@ -744,8 +744,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Keyboard: Escape closes modal
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+  // Keyboard: Escape closes modal or chat sidebar
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeModal(); if (_chatOpen) toggleChat(); }
+  });
 
   setStep(1);
 });
@@ -891,13 +893,10 @@ let _chatOpen = false;
 
 function toggleChat() {
   _chatOpen = !_chatOpen;
-  const panel = $("aiChatPanel");
-  if (_chatOpen) {
-    panel.classList.remove("hidden");
-    setTimeout(() => $("aiChatInput").focus(), 80);
-  } else {
-    panel.classList.add("hidden");
-  }
+  $("aiChatPanel").classList.toggle("open", _chatOpen);
+  $("aiChatBackdrop").classList.toggle("open", _chatOpen);
+  document.body.style.overflow = _chatOpen ? "hidden" : "";
+  if (_chatOpen) setTimeout(() => $("aiChatInput").focus(), 320);
 }
 
 function _appendMessage(text, role) {
