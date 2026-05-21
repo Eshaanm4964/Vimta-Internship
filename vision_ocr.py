@@ -168,7 +168,19 @@ def extract_with_vision(image, machine_type: str, fields: list, units: dict = No
     """
     errors = []
 
-    # Try Anthropic Claude first (most accurate)
+    # Try Google Vision first (dedicated OCR engine, most reliable for text)
+    if os.getenv("GOOGLE_VISION_API_KEY"):
+        try:
+            from google_vision_ocr import extract_with_google_vision
+            result = extract_with_google_vision(image, machine_type, fields, units or {})
+            if result:
+                return result
+            print("[VisionOCR] Google Vision returned empty — trying next")
+        except Exception as e:
+            errors.append(f"GoogleVision: {e}")
+            print(f"[VisionOCR] Google Vision failed: {e}")
+
+    # Try Anthropic Claude (best multimodal fallback)
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
             return _extract_with_anthropic(image, machine_type, fields, units or {})
