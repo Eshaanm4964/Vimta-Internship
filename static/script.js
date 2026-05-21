@@ -883,3 +883,88 @@ async function retryLimsPush(readingId) {
     showToast("Retry error: " + e.message, "error");
   }
 }
+
+/* ════════════════════════════
+   AI CHAT WIDGET
+════════════════════════════ */
+let _chatOpen = false;
+
+function toggleChat() {
+  _chatOpen = !_chatOpen;
+  const panel = $("aiChatPanel");
+  if (_chatOpen) {
+    panel.classList.remove("hidden");
+    setTimeout(() => $("aiChatInput").focus(), 80);
+  } else {
+    panel.classList.add("hidden");
+  }
+}
+
+function _appendMessage(text, role) {
+  const msgs = $("aiChatMessages");
+  const div = document.createElement("div");
+  div.className = `ai-msg ai-msg-${role}`;
+  const bubble = document.createElement("div");
+  bubble.className = "ai-msg-bubble";
+  bubble.innerHTML = text.replace(/\n/g, "<br>");
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function _appendThinking() {
+  const msgs = $("aiChatMessages");
+  const div = document.createElement("div");
+  div.className = "ai-msg ai-msg-bot ai-msg-thinking";
+  div.innerHTML = `<div class="ai-msg-bubble"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function sendChatMessage() {
+  const input = $("aiChatInput");
+  const question = (input.value || "").trim();
+  if (!question) return;
+
+  input.value = "";
+  $("aiChatSend").disabled = true;
+  _appendMessage(question, "user");
+
+  // Hide suggestions after first real message
+  const suggs = document.querySelector(".ai-chat-suggestions");
+  if (suggs) suggs.style.display = "none";
+
+  const thinking = _appendThinking();
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    const data = await res.json();
+    thinking.remove();
+    if (data.error) {
+      _appendMessage("Sorry, an error occurred: " + data.error, "bot");
+    } else {
+      _appendMessage(data.answer || "I don't have an answer for that.", "bot");
+    }
+  } catch (e) {
+    thinking.remove();
+    _appendMessage("Network error — please check the server is running.", "bot");
+  } finally {
+    $("aiChatSend").disabled = false;
+    input.focus();
+  }
+}
+
+function sendSuggestion(text) {
+  $("aiChatInput").value = text;
+  sendChatMessage();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const inp = $("aiChatInput");
+  if (inp) inp.addEventListener("keydown", e => { if (e.key === "Enter") sendChatMessage(); });
+});

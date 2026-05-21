@@ -22,7 +22,7 @@ from flask_cors import CORS
 
 from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 from database import (
-    init_db, save_reading, get_readings, get_user_by_username, verify_password,
+    init_db, seed_initial_data, save_reading, get_readings, get_user_by_username, verify_password,
     get_labs, get_machines, get_users, create_lab, create_machine,
     get_machine_types, create_machine_type, create_machine_field,
     get_lims_config, save_lims_config, update_reading_lims_status, get_lims_push_log,
@@ -65,8 +65,12 @@ def labs():
             return jsonify({"success": True}), 201
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-    
-    return jsonify(get_labs())
+
+    # Merge hardcoded labs (always available) with any admin-added labs in DB
+    static_labs = {lab: {"lab_no": lab, "lab_name": lab} for lab in list_labs()}
+    for row in get_labs():
+        static_labs[row["lab_no"]] = {"lab_no": row["lab_no"], "lab_name": row.get("lab_name", row["lab_no"])}
+    return jsonify(sorted(static_labs.values(), key=lambda x: x["lab_no"]))
 
 
 @app.route('/api/machines', methods=['GET', 'POST'])
@@ -107,8 +111,7 @@ def machines_api():
     return jsonify(get_machines(lab_no))
 
 @app.route('/api/machines/<lab_no>', methods=['GET'])
-def api_machines():
-    lab_no = request.args.get("lab_no")
+def api_machines(lab_no):
     return jsonify(list_machines(lab_no))
 
 
@@ -502,6 +505,19 @@ def api_lims_retry(reading_id):
 @app.route("/api/lims/log", methods=["GET"])
 def api_lims_log():
     return jsonify(get_lims_push_log())
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "question is required"}), 400
+    if len(question) > 1000:
+        return jsonify({"error": "Question is too long (max 1000 characters)"}), 400
+    from rag_chatbot import answer_question
+    answer = answer_question(question)
+    return jsonify({"answer": answer})
 
 
 if __name__ == "__main__":
