@@ -1288,6 +1288,7 @@ body { display: block; }
   box-shadow: 0 8px 40px rgba(13,148,136,.12), 0 2px 8px rgba(15,23,42,.06);
   border: 1px solid rgba(13,148,136,.15);
   border-top: 3px solid var(--teal);
+  box-sizing: border-box;
 }
 
 .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
@@ -1489,16 +1490,46 @@ body { display: block; }
 /* ══ Responsive sidebar ══ */
 @media (max-width: 900px) {
   .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; }
-  .sidebar-nav { display: flex; flex-direction: row; overflow-x: auto; padding: 6px; }
+  .sidebar {
+    width: 100%; height: auto;
+    position: relative;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .sidebar-brand { padding: 12px 16px; }
+  .sidebar-nav { display: flex; flex-direction: row; overflow-x: auto; padding: 6px; flex: 1; }
   .sidebar-user { display: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+  /* Fix watermark: sidebar is now on top, not left */
+  .app-bg { left: 0; top: 0; }
 }
 
 @media (max-width: 600px) {
   .stats-grid { grid-template-columns: 1fr 1fr; }
-  .topbar { padding: 0 16px; }
-  .page-body { padding: 16px; }
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-logo { display: none; }
+  .topbar-sub  { display: none; }
+  .page-body { padding: 12px; gap: 12px; }
+  .panel { border-radius: 10px; }
+  .panel-body { padding: 14px; }
+  /* Shrink Chat Now button */
+  .ai-chat-trigger span { display: none; }
+  .ai-chat-trigger { padding: 7px 10px; border-radius: 50%; }
+  /* Full-width sidebar */
+  .ai-chat-sidebar { width: 100vw; }
+  /* Login card */
+  .login-card { padding: 24px 20px; }
+}
+
+@media (max-width: 420px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .field-row, .field-row-3, .field-row-4 { grid-template-columns: 1fr; }
+  .quick-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Reduce animation on low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  .login-bg-logo, .app-bg-logo { animation: none; }
 }
 
 /* ══ LIMS integration ══ */
