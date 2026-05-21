@@ -163,26 +163,26 @@ def _extract_with_anthropic(image, machine_type: str, fields: list, units: dict)
 def extract_with_vision(image, machine_type: str, fields: list, units: dict = None) -> dict:
     """
     Extract machine readings using a vision LLM.
-    Tries Gemini first (free), then Anthropic (paid).
+    Tries Anthropic Claude first (best accuracy), then Gemini as fallback.
     Raises Exception if neither key is configured or both fail.
     """
     errors = []
 
-    # Try Gemini first (free)
-    if os.getenv("GEMINI_API_KEY"):
-        try:
-            return _extract_with_gemini(image, machine_type, fields, units or {})
-        except Exception as e:
-            errors.append(f"Gemini: {e}")
-            print(f"[VisionOCR] Gemini failed: {e}")
-
-    # Try Anthropic
+    # Try Anthropic Claude first (most accurate)
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
             return _extract_with_anthropic(image, machine_type, fields, units or {})
         except Exception as e:
             errors.append(f"Anthropic: {e}")
             print(f"[VisionOCR] Anthropic failed: {e}")
+
+    # Fallback to Gemini (free)
+    if os.getenv("GEMINI_API_KEY"):
+        try:
+            return _extract_with_gemini(image, machine_type, fields, units or {})
+        except Exception as e:
+            errors.append(f"Gemini: {e}")
+            print(f"[VisionOCR] Gemini failed: {e}")
 
     raise Exception("No vision API key set. " + " | ".join(errors) if errors
                     else "Set GEMINI_API_KEY (free) or ANTHROPIC_API_KEY")
