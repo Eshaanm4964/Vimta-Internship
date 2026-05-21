@@ -35,8 +35,10 @@ def _get_display_crop(image, machine_type):
     """Return the display region crop for the given machine type."""
     try:
         h, w = image.shape[:2]
-        if h <= 200 and w <= 200:
-            return image  # already a small crop
+        # Skip cropping if image is already small or is a narrow display strip
+        if h <= 200 or w <= 200 or (w / max(h, 1) > 4):
+            return image
+        # Skip cropping for full-machine photos that are close to square
         if machine_type == "centrifuge":
             crop = _crop_centrifuge_display(image)
         else:
