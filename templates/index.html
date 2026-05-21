@@ -306,9 +306,13 @@
               <div class="preview-panel" id="previewPane">
                 <div class="preview-bar">
                   <span>Image Preview</span>
-                  <button type="button" class="btn-ghost-sm" id="clearImageBtn">✕ Clear</button>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <button type="button" class="btn-ghost-sm hidden" id="clearCropBtn" onclick="clearCrop()">✕ Clear selection</button>
+                    <button type="button" class="btn-ghost-sm" id="clearImageBtn">✕ Clear</button>
+                  </div>
                 </div>
-                <img id="previewImage" class="preview-img" alt="Uploaded preview" />
+                <canvas id="previewCanvas" class="preview-canvas"></canvas>
+                <p id="cropHint" class="crop-hint hidden">Drag over the display numbers to select that area only</p>
               </div>
             </div>
             <div class="upload-actions">

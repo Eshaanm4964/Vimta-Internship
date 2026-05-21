@@ -476,27 +476,179 @@ function setExtracting(loading) {
 }
 
 /* ════════════════════════════
-   IMAGE PREVIEW
+   CROP CANVAS
 ════════════════════════════ */
+let _cropImg  = null;   // HTMLImageElement of loaded photo
+let _cropSel  = null;   // {x,y,w,h} in canvas display coords
+let _dragStart = null;  // {x,y} while dragging
+
 function showPreview(file) {
-  const img  = $("previewImage");
-  const pane = $("previewPane");
-  if (!img || !pane) return;
-  img.src = URL.createObjectURL(file);
-  img.style.display = "block";
-  pane.classList.add("visible");
+  const canvas = $("previewCanvas");
+  const pane   = $("previewPane");
+  if (!canvas || !pane) return;
+
+  _cropSel  = null;
+  _dragStart = null;
+  _cropImg  = new Image();
+
+  _cropImg.onload = () => {
+    const maxW = Math.min((canvas.parentElement.clientWidth || 500) - 4, 600);
+    const maxH = 300;
+    const ratio = Math.min(maxW / _cropImg.naturalWidth, maxH / _cropImg.naturalHeight, 1);
+    canvas.width  = Math.round(_cropImg.naturalWidth  * ratio);
+    canvas.height = Math.round(_cropImg.naturalHeight * ratio);
+    canvas.dataset.ratio = ratio;
+    _drawCanvas();
+    pane.classList.add("visible");
+    const hint = $("cropHint");
+    hint.textContent = "Drag over the display numbers to select that area only";
+    hint.className = "crop-hint";
+    hint.classList.remove("hidden");
+    $("clearCropBtn").classList.add("hidden");
+  };
+  _cropImg.src = URL.createObjectURL(file);
+}
+
+function _drawCanvas() {
+  const canvas = $("previewCanvas");
+  if (!canvas || !_cropImg) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(_cropImg, 0, 0, canvas.width, canvas.height);
+
+  if (_cropSel && _cropSel.w > 4 && _cropSel.h > 4) {
+    const {x, y, w, h} = _cropSel;
+    ctx.fillStyle = "rgba(0,0,0,0.48)";
+    ctx.fillRect(0, 0, canvas.width, y);
+    ctx.fillRect(0, y + h, canvas.width, canvas.height - y - h);
+    ctx.fillRect(0, y, x, h);
+    ctx.fillRect(x + w, y, canvas.width - x - w, h);
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.setLineDash([]);
+    const hs = 7;
+    ctx.fillStyle = "#10b981";
+    [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => {
+      ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs);
+    });
+  }
+}
+
+function _canvasXY(canvas, e) {
+  const rect   = canvas.getBoundingClientRect();
+  const src    = e.touches ? e.touches[0] : e;
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: Math.max(0, Math.min(canvas.width,  (src.clientX - rect.left) * scaleX)),
+    y: Math.max(0, Math.min(canvas.height, (src.clientY - rect.top)  * scaleY)),
+  };
+}
+
+function _onCropDown(e) {
+  const canvas = $("previewCanvas");
+  _dragStart = _canvasXY(canvas, e);
+  _cropSel   = null;
+  e.preventDefault();
+}
+
+function _onCropMove(e) {
+  if (!_dragStart) return;
+  const canvas = $("previewCanvas");
+  const pos = _canvasXY(canvas, e);
+  _cropSel = {
+    x: Math.min(_dragStart.x, pos.x),
+    y: Math.min(_dragStart.y, pos.y),
+    w: Math.abs(pos.x - _dragStart.x),
+    h: Math.abs(pos.y - _dragStart.y),
+  };
+  _drawCanvas();
+  e.preventDefault();
+}
+
+function _onCropUp(e) {
+  if (!_dragStart) return;
+  _dragStart = null;
+  if (_cropSel && _cropSel.w > 10 && _cropSel.h > 10) {
+    const hint = $("cropHint");
+    hint.textContent = "✅ Area selected — click Extract Readings to scan just this region";
+    hint.className = "crop-hint selected";
+    $("clearCropBtn").classList.remove("hidden");
+  } else {
+    _cropSel = null;
+    _drawCanvas();
+  }
+  e.preventDefault();
+}
+
+function clearCrop() {
+  _cropSel = null;
+  _drawCanvas();
+  const hint = $("cropHint");
+  hint.textContent = "Drag over the display numbers to select that area only";
+  hint.className = "crop-hint";
+  $("clearCropBtn").classList.add("hidden");
+}
+
+function getCroppedBlob() {
+  return new Promise(resolve => {
+    if (!_cropImg) { resolve(null); return; }
+    const canvas = $("previewCanvas");
+    const ratio  = parseFloat(canvas.dataset.ratio) || 1;
+    const out    = document.createElement("canvas");
+    const ctx    = out.getContext("2d");
+
+    if (_cropSel && _cropSel.w > 10 && _cropSel.h > 10) {
+      const nx = _cropSel.x / ratio;
+      const ny = _cropSel.y / ratio;
+      const nw = _cropSel.w / ratio;
+      const nh = _cropSel.h / ratio;
+      out.width  = Math.round(nw);
+      out.height = Math.round(nh);
+      ctx.drawImage(_cropImg, nx, ny, nw, nh, 0, 0, nw, nh);
+    } else {
+      out.width  = _cropImg.naturalWidth;
+      out.height = _cropImg.naturalHeight;
+      ctx.drawImage(_cropImg, 0, 0);
+    }
+    out.toBlob(resolve, "image/jpeg", 0.95);
+  });
+}
+
+function _initCropEvents() {
+  const canvas = $("previewCanvas");
+  if (!canvas) return;
+  canvas.addEventListener("mousedown",  _onCropDown);
+  canvas.addEventListener("mousemove",  _onCropMove);
+  canvas.addEventListener("mouseup",    _onCropUp);
+  canvas.addEventListener("mouseleave", _onCropUp);
+  canvas.addEventListener("touchstart", _onCropDown, { passive: false });
+  canvas.addEventListener("touchmove",  _onCropMove, { passive: false });
+  canvas.addEventListener("touchend",   _onCropUp,   { passive: false });
 }
 
 function clearPreview() {
-  const img  = $("previewImage");
   const pane = $("previewPane");
   const drop = $("dropzone");
-  if (img)  { img.src = ""; img.style.display = "none"; }
   if (pane) pane.classList.remove("visible");
   if (drop) drop.classList.remove("has-file");
   const input = $("imageInput");
   if (input) input.value = "";
   selectedFile = null;
+  _cropImg  = null;
+  _cropSel  = null;
+  _dragStart = null;
+  const canvas = $("previewCanvas");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  const hint = $("cropHint");
+  if (hint) hint.classList.add("hidden");
+  const btn = $("clearCropBtn");
+  if (btn) btn.classList.add("hidden");
 }
 
 /* ════════════════════════════
@@ -563,7 +715,12 @@ async function extractValues() {
   formData.append("image", file);
 
   setExtracting(true);
-  setMessage("Analysing image and extracting readings…");
+  setMessage(_cropSel ? "Scanning selected region…" : "Analysing image and extracting readings…");
+
+  const imageBlob = await getCroppedBlob();
+  if (imageBlob) {
+    formData.set("image", imageBlob, "capture.jpg");
+  }
 
   try {
     const controller = new AbortController();
@@ -700,6 +857,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try { currentUser = JSON.parse(saved); onLoginSuccess(); }
     catch { sessionStorage.removeItem("lims_user"); }
   }
+
+  // Crop canvas
+  _initCropEvents();
 
   // Login
   $("loginBtn").addEventListener("click", doLogin);
