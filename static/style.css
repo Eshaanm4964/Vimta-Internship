@@ -4,11 +4,11 @@
 
 :root {
   /* Surface */
-  --bg:          #f1f5f9;
+  --bg:          #f0fdfa;
   --surface:     #ffffff;
-  --surface-2:   #f8fafc;
-  --border:      #e2e8f0;
-  --border-2:    #cbd5e1;
+  --surface-2:   #f6fffe;
+  --border:      #ccf2ec;
+  --border-2:    #99e6d8;
 
   /* Brand — Navy */
   --navy:        #0f172a;
@@ -1077,7 +1077,41 @@ body { display: block; }
   flex-direction: column;
   overflow-y: auto;
   min-width: 0;
+  position: relative;
 }
+
+/* App background watermarks */
+.app-bg {
+  position: fixed;
+  top: 0; left: 240px; right: 0; bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.app-bg-logo {
+  position: absolute;
+  opacity: 0.045;
+  filter: saturate(0.3);
+  object-fit: contain;
+}
+.app-bg-logo-1 {
+  width: 360px;
+  top: -40px; right: -60px;
+  animation: bgFloat1 10s ease-in-out infinite;
+}
+.app-bg-logo-2 {
+  width: 220px;
+  bottom: 60px; right: 30%;
+  animation: bgFloat2 13s ease-in-out infinite 2s;
+}
+.app-bg-logo-3 {
+  width: 280px;
+  bottom: -30px; right: -20px;
+  animation: bgFloat1 11s ease-in-out infinite 4s;
+}
+
+/* Ensure all content sits above the watermark */
+.topbar, .page-body, .page-footer { position: relative; z-index: 1; }
 
 /* ── Topbar ── */
 .topbar {
