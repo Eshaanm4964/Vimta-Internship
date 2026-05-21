@@ -899,13 +899,58 @@ function toggleChat() {
   if (_chatOpen) setTimeout(() => $("aiChatInput").focus(), 320);
 }
 
+function _formatChatText(text) {
+  const lines = text.split("\n");
+  let html = "";
+  let inUl = false;
+
+  const closeList = () => { if (inUl) { html += "</ul>"; inUl = false; } };
+
+  const fmt = s => s
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`(.+?)`/g, "<code>$1</code>");
+
+  for (let raw of lines) {
+    const line = raw.trimEnd();
+    if (!line) { closeList(); html += "<br>"; continue; }
+
+    // Bullet: *, -, + (with optional indent)
+    const bullet = line.match(/^(\s*)[*\-+]\s+(.*)/);
+    if (bullet) {
+      if (!inUl) { html += '<ul class="ai-list">'; inUl = true; }
+      html += `<li>${fmt(bullet[2])}</li>`;
+      continue;
+    }
+
+    // Numbered list
+    const numbered = line.match(/^\d+\.\s+(.*)/);
+    if (numbered) {
+      if (!inUl) { html += '<ul class="ai-list ai-list-num">'; inUl = true; }
+      html += `<li>${fmt(numbered[1])}</li>`;
+      continue;
+    }
+
+    closeList();
+
+    // Bold heading line (entire line bold or ends with colon)
+    if (/^\*\*.*\*\*[:\s]*$/.test(line) || /^[A-Z][A-Z\s&\/]{4,}:$/.test(line)) {
+      html += `<p class="ai-section-head">${fmt(line)}</p>`;
+    } else {
+      html += `<p>${fmt(line)}</p>`;
+    }
+  }
+  closeList();
+  return html;
+}
+
 function _appendMessage(text, role) {
   const msgs = $("aiChatMessages");
   const div = document.createElement("div");
   div.className = `ai-msg ai-msg-${role}`;
   const bubble = document.createElement("div");
   bubble.className = "ai-msg-bubble";
-  bubble.innerHTML = text.replace(/\n/g, "<br>");
+  bubble.innerHTML = role === "bot" ? _formatChatText(text) : text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   div.appendChild(bubble);
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
