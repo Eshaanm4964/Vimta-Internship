@@ -143,7 +143,7 @@ def _analyze_image_quality(image, machine_type_info):
 # Core extraction cascade: Vision API → PaddleOCR → Tesseract
 # ---------------------------------------------------------------------------
 
-def extract_readings(image, machine_type_info):
+def extract_readings(image, machine_type_info, pre_cropped=False):
     """
     Extract machine readings using a three-tier OCR cascade:
       1. Claude Vision API (most accurate)
@@ -155,7 +155,7 @@ def extract_readings(image, machine_type_info):
     fields = machine_type_info.get("fields", [])
     units = machine_type_info.get("units", {})
 
-    display = _get_display_crop(image, machine_type)
+    display = image if pre_cropped else _get_display_crop(image, machine_type)
 
     # ---- Tier 1: Claude Vision API ----
     try:
@@ -278,13 +278,13 @@ def detect_machine_id(image):
 # ---------------------------------------------------------------------------
 
 def _extract_with_timeout(image_path, selected_lab_no=None, selected_machine_id=None,
-                          timeout_seconds=60):
+                          timeout_seconds=60, pre_cropped=False):
     result = [None]  # use list so worker can replace the value
 
     def worker():
         try:
             result[0] = _extract_from_image_internal(
-                image_path, selected_lab_no, selected_machine_id)
+                image_path, selected_lab_no, selected_machine_id, pre_cropped=pre_cropped)
         except Exception as e:
             result[0] = {"error": str(e)}
 
@@ -306,7 +306,7 @@ def _extract_with_timeout(image_path, selected_lab_no=None, selected_machine_id=
 # Main internal extraction
 # ---------------------------------------------------------------------------
 
-def _extract_from_image_internal(image_path, selected_lab_no=None, selected_machine_id=None):
+def _extract_from_image_internal(image_path, selected_lab_no=None, selected_machine_id=None, pre_cropped=False):
     image = cv2.imread(image_path)
     if image is None:
         raise ValueError("Could not read uploaded image")
@@ -344,7 +344,7 @@ def _extract_from_image_internal(image_path, selected_lab_no=None, selected_mach
         print(f"[OCR] Quality analysis failed: {e}")
         quality_analysis = {"quality_score": 50, "issues": [], "recommendation": ""}
 
-    readings, raw_display_text = extract_readings(image, machine_info)
+    readings, raw_display_text = extract_readings(image, machine_info, pre_cropped=pre_cropped)
 
     selected_group = machine_info.get("group_code")
     detected_group = None
@@ -397,6 +397,6 @@ def _extract_from_image_internal(image_path, selected_lab_no=None, selected_mach
     }
 
 
-def extract_from_image(image_path, selected_lab_no=None, selected_machine_id=None):
+def extract_from_image(image_path, selected_lab_no=None, selected_machine_id=None, pre_cropped=False):
     return _extract_with_timeout(
-        image_path, selected_lab_no, selected_machine_id, timeout_seconds=90)
+        image_path, selected_lab_no, selected_machine_id, timeout_seconds=90, pre_cropped=pre_cropped)

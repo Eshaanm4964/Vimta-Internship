@@ -720,6 +720,9 @@ async function extractValues() {
   const imageBlob = await getCroppedBlob();
   if (imageBlob) {
     formData.set("image", imageBlob, "capture.jpg");
+    if (_cropSel && _cropSel.w > 10 && _cropSel.h > 10) {
+      formData.append("pre_cropped", "1");
+    }
   }
 
   try {

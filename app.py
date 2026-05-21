@@ -160,8 +160,9 @@ def api_extract():
 
     try:
         from extractor import extract_from_image
-        print(f"Starting extraction for machine: {machine_id}")
-        result = extract_from_image(path, selected_lab_no=lab_no, selected_machine_id=machine_id)
+        pre_cropped = request.form.get("pre_cropped") == "1"
+        print(f"Starting extraction for machine: {machine_id}, pre_cropped={pre_cropped}")
+        result = extract_from_image(path, selected_lab_no=lab_no, selected_machine_id=machine_id, pre_cropped=pre_cropped)
         print(f"Extraction result: {result}")
         
         # Check if extraction failed or timed out
