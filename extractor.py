@@ -155,12 +155,15 @@ def extract_readings(image, machine_type_info, pre_cropped=False):
     fields = machine_type_info.get("fields", [])
     units = machine_type_info.get("units", {})
 
+    # Vision API gets the full image (or user-selected crop) — it finds the display itself
+    vision_input = image if pre_cropped else image
+    # Traditional OCR needs a tighter crop
     display = image if pre_cropped else _get_display_crop(image, machine_type)
 
-    # ---- Tier 1: Claude Vision API ----
+    # ---- Tier 1: Claude / Gemini Vision API ----
     try:
         from vision_ocr import extract_with_vision
-        readings = extract_with_vision(display, machine_type, fields, units)
+        readings = extract_with_vision(vision_input, machine_type, fields, units)
         non_null = {k: v for k, v in readings.items() if v is not None}
         if non_null:
             print(f"[OCR] Vision API succeeded: {non_null}")
