@@ -429,6 +429,62 @@ def get_pending_users():
     return [dict(row) for row in rows]
 
 
+def seed_initial_data():
+    """Create default users and seed labs/machines from machine_router if DB is empty."""
+    from machine_router import MACHINES
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Default users
+    defaults = [
+        ("admin",  "admin123", "Administrator", "admin@vimtalabs.com", "admin"),
+        ("0007",   "eshaan",   "Eshaan Michael", "",                   "user"),
+    ]
+    for username, password, full_name, email, role in defaults:
+        exists = cur.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone()
+        if not exists:
+            cur.execute(
+                "INSERT INTO users (username, password_hash, full_name, email, role, is_approved, is_active) "
+                "VALUES (?, ?, ?, ?, ?, 1, 1)",
+                (username, hash_password(password), full_name, email, role)
+            )
+
+    # Seed labs from machine_router
+    lab_nos = sorted({m["lab_no"] for m in MACHINES})
+    for lab_no in lab_nos:
+        exists = cur.execute("SELECT 1 FROM labs WHERE lab_no=?", (lab_no,)).fetchone()
+        if not exists:
+            cur.execute("INSERT INTO labs (lab_no, lab_name) VALUES (?, ?)", (lab_no, lab_no))
+
+    # Seed machines from machine_router
+    for m in MACHINES:
+        exists = cur.execute("SELECT 1 FROM machines WHERE machine_id=?", (m["machine_id"],)).fetchone()
+        if not exists:
+            lab_row = cur.execute("SELECT id FROM labs WHERE lab_no=?", (m["lab_no"],)).fetchone()
+            if not lab_row:
+                continue
+            lab_id = lab_row["id"]
+            type_name = m["group_code"].lower()
+            type_row = cur.execute("SELECT id FROM machine_types WHERE type_name=?", (type_name,)).fetchone()
+            if not type_row:
+                cur.execute(
+                    "INSERT INTO machine_types (type_name, display_name) VALUES (?, ?)",
+                    (type_name, m["machine_name"])
+                )
+                type_id = cur.lastrowid
+            else:
+                type_id = type_row["id"]
+            cur.execute(
+                "INSERT INTO machines (lab_id, machine_type_id, machine_id, machine_name, group_code) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (lab_id, type_id, m["machine_id"], m["machine_name"], m["group_code"])
+            )
+
+    conn.commit()
+    conn.close()
+
+
 def check_user_approval(username: str):
     """Check if user is approved"""
     conn = get_connection()
