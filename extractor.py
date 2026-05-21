@@ -277,14 +277,14 @@ def detect_machine_id(image):
 
 def _extract_with_timeout(image_path, selected_lab_no=None, selected_machine_id=None,
                           timeout_seconds=60):
-    result = {"error": "Extraction timed out"}
+    result = [None]  # use list so worker can replace the value
 
     def worker():
         try:
-            result.update(_extract_from_image_internal(
-                image_path, selected_lab_no, selected_machine_id))
+            result[0] = _extract_from_image_internal(
+                image_path, selected_lab_no, selected_machine_id)
         except Exception as e:
-            result.update({"error": str(e)})
+            result[0] = {"error": str(e)}
 
     t = threading.Thread(target=worker, daemon=True)
     t.start()
@@ -294,7 +294,10 @@ def _extract_with_timeout(image_path, selected_lab_no=None, selected_machine_id=
         print(f"[OCR] Extraction timed out after {timeout_seconds}s")
         return {"error": "OCR is taking too long. Please try with a clearer image."}
 
-    return result
+    if result[0] is None:
+        return {"error": "Extraction failed unexpectedly"}
+
+    return result[0]
 
 
 # ---------------------------------------------------------------------------
