@@ -1536,6 +1536,22 @@ body { display: block; }
   animation: dotpulse 2s infinite;
 }
 
+.ai-chat-clear {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.4);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.ai-chat-clear:hover { background: rgba(220,38,38,.2); color: #fca5a5; }
+.ai-chat-clear svg { width: 14px; height: 14px; }
+
 .ai-chat-close {
   width: 32px;
   height: 32px;

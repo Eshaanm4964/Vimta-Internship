@@ -890,6 +890,56 @@ async function retryLimsPush(readingId) {
    AI CHAT WIDGET
 ════════════════════════════ */
 let _chatOpen = false;
+const CHAT_STORAGE_KEY = "vimta_chat_history";
+
+function _saveChatHistory() {
+  const msgs = $("aiChatMessages");
+  const items = [...msgs.querySelectorAll(".ai-msg")].map(el => ({
+    role: el.classList.contains("ai-msg-user") ? "user" : "bot",
+    html: el.querySelector(".ai-msg-bubble").innerHTML,
+  }));
+  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(items));
+}
+
+function _restoreChatHistory() {
+  const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const items = JSON.parse(raw);
+    if (!items.length) return;
+    const msgs = $("aiChatMessages");
+    msgs.innerHTML = "";                      // clear default greeting
+    $("aiSuggestions").style.display = "none"; // hide chips if history exists
+    items.forEach(({ role, html }) => {
+      const div = document.createElement("div");
+      div.className = `ai-msg ai-msg-${role}`;
+      const bubble = document.createElement("div");
+      bubble.className = "ai-msg-bubble";
+      bubble.innerHTML = html;
+      div.appendChild(bubble);
+      msgs.appendChild(div);
+    });
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch { localStorage.removeItem(CHAT_STORAGE_KEY); }
+}
+
+function clearChatHistory() {
+  localStorage.removeItem(CHAT_STORAGE_KEY);
+  const msgs = $("aiChatMessages");
+  msgs.innerHTML = `
+    <div class="ai-msg ai-msg-bot">
+      <div class="ai-msg-bubble">
+        Hi! I'm your Vimta Labs AI assistant. I can help you with:<br><br>
+        • How to capture machine readings<br>
+        • Managing labs and instruments<br>
+        • LIMS integration setup<br>
+        • Information about Vimta Labs<br><br>
+        Ask me anything!
+      </div>
+    </div>`;
+  const sugg = $("aiSuggestions");
+  if (sugg) sugg.style.display = "";
+}
 
 function toggleChat() {
   _chatOpen = !_chatOpen;
@@ -976,8 +1026,8 @@ async function sendChatMessage() {
   $("aiChatSend").disabled = true;
   _appendMessage(question, "user");
 
-  // Hide suggestions after first real message
-  const suggs = document.querySelector(".ai-chat-suggestions");
+  // Hide suggestion chips after first real message
+  const suggs = $("aiSuggestions");
   if (suggs) suggs.style.display = "none";
 
   const thinking = _appendThinking();
@@ -989,17 +1039,14 @@ async function sendChatMessage() {
     });
     const data = await res.json();
     thinking.remove();
-    if (data.error) {
-      _appendMessage("Sorry, an error occurred: " + data.error, "bot");
-    } else {
-      _appendMessage(data.answer || "I don't have an answer for that.", "bot");
-    }
+    _appendMessage(data.error ? "Sorry, an error occurred: " + data.error : (data.answer || "I don't have an answer for that."), "bot");
   } catch (e) {
     thinking.remove();
     _appendMessage("Network error — please check the server is running.", "bot");
   } finally {
     $("aiChatSend").disabled = false;
     input.focus();
+    _saveChatHistory();
   }
 }
 
@@ -1011,4 +1058,5 @@ function sendSuggestion(text) {
 document.addEventListener("DOMContentLoaded", () => {
   const inp = $("aiChatInput");
   if (inp) inp.addEventListener("keydown", e => { if (e.key === "Enter") sendChatMessage(); });
+  _restoreChatHistory();
 });
