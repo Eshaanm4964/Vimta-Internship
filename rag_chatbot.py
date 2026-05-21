@@ -351,17 +351,17 @@ def retrieve_chunks(query: str, top_k: int = 3) -> List[dict]:
     return [KNOWLEDGE_BASE[i] for _, i in scores[:top_k]]
 
 
-# ─── Grok (xAI) call ──────────────────────────────────────────────────────────
+# ─── Groq call ────────────────────────────────────────────────────────────────
 
 def answer_question(question: str) -> str:
-    """Retrieve relevant context and call Grok to generate a grounded answer."""
+    """Retrieve relevant context and call Groq to generate a grounded answer."""
     import urllib.request, urllib.error, json as _json
 
-    api_key = os.getenv("GROK_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return (
             "The AI assistant is not configured. "
-            "Please set the GROK_API_KEY environment variable."
+            "Please set the GROQ_API_KEY environment variable."
         )
 
     chunks = retrieve_chunks(question, top_k=3)
@@ -377,7 +377,7 @@ def answer_question(question: str) -> str:
     )
 
     payload = {
-        "model": "grok-3-fast",
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"},
@@ -388,11 +388,12 @@ def answer_question(question: str) -> str:
 
     try:
         req = urllib.request.Request(
-            "https://api.x.ai/v1/chat/completions",
+            "https://api.groq.com/openai/v1/chat/completions",
             data=_json.dumps(payload).encode(),
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
+                "User-Agent": "VimtaLIMS/1.0",
             },
             method="POST",
         )
@@ -401,6 +402,6 @@ def answer_question(question: str) -> str:
         return data["choices"][0]["message"]["content"].strip()
     except urllib.error.HTTPError as e:
         body = e.read().decode()
-        return f"Grok API error ({e.code}): {body}"
+        return f"API error ({e.code}): {body}"
     except Exception as exc:
         return f"Sorry, I encountered an error while generating a response: {exc}"
