@@ -351,15 +351,17 @@ def retrieve_chunks(query: str, top_k: int = 3) -> List[dict]:
     return [KNOWLEDGE_BASE[i] for _, i in scores[:top_k]]
 
 
-# ─── Gemini call ──────────────────────────────────────────────────────────────
+# ─── Grok (xAI) call ──────────────────────────────────────────────────────────
 
 def answer_question(question: str) -> str:
-    """Retrieve relevant context and call Gemini to generate an answer."""
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    """Retrieve relevant context and call Grok to generate a grounded answer."""
+    import urllib.request, urllib.error, json as _json
+
+    api_key = os.getenv("GROK_API_KEY")
     if not api_key:
         return (
             "The AI assistant is not configured. "
-            "Please set the GEMINI_API_KEY environment variable."
+            "Please set the GROK_API_KEY environment variable."
         )
 
     chunks = retrieve_chunks(question, top_k=3)
@@ -374,18 +376,31 @@ def answer_question(question: str) -> str:
         "Be concise, friendly, and professional. Use bullet points for step-by-step instructions."
     )
 
-    full_prompt = (
-        f"{system_prompt}\n\n"
-        f"CONTEXT:\n{context}\n\n"
-        f"USER QUESTION: {question}\n\n"
-        f"ANSWER:"
-    )
+    payload = {
+        "model": "grok-3-fast",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"},
+        ],
+        "max_tokens": 512,
+        "temperature": 0.3,
+    }
 
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(full_prompt)
-        return response.text.strip()
+        req = urllib.request.Request(
+            "https://api.x.ai/v1/chat/completions",
+            data=_json.dumps(payload).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = _json.loads(resp.read().decode())
+        return data["choices"][0]["message"]["content"].strip()
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        return f"Grok API error ({e.code}): {body}"
     except Exception as exc:
         return f"Sorry, I encountered an error while generating a response: {exc}"
