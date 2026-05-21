@@ -75,28 +75,40 @@ def _parse_response(text: str, fields: list) -> dict:
 # ---------------------------------------------------------------------------
 
 def _extract_with_gemini(image, machine_type: str, fields: list, units: dict) -> dict:
-    """Use Google Gemini Flash — free at 15 req/min."""
-    import warnings
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import google.generativeai as genai
-    from PIL import Image
+    """Use Google Gemini Flash Lite via new google-genai SDK."""
+    from google import genai
+    from google.genai import types
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not set")
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-flash-lite-latest")
+    client = genai.Client(api_key=api_key)
 
-    # Convert to PIL Image
+    # Encode image to bytes
     if isinstance(image, str):
-        pil_image = Image.open(image)
+        ext = os.path.splitext(image)[1].lower()
+        media_map = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+                     '.png': 'image/png', '.webp': 'image/webp'}
+        media_type = media_map.get(ext, 'image/jpeg')
+        with open(image, 'rb') as f:
+            image_bytes = f.read()
     else:
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(rgb)
+        _, buf = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        image_bytes = buf.tobytes()
+        media_type = 'image/jpeg'
 
     prompt = _build_prompt(machine_type, fields, units)
-    response = model.generate_content([pil_image, prompt])
+    response = client.models.generate_content(
+        model="gemini-2.5-flash-lite",
+        contents=[
+            types.Part.from_bytes(data=image_bytes, mime_type=media_type),
+            prompt,
+        ],
+        config=types.GenerateContentConfig(
+            http_options=types.HttpOptions(timeout=30000),
+        ),
+    )
     raw = response.text.strip()
     print(f"[VisionOCR/Gemini] Response: {raw}")
     return _parse_response(raw, fields)
