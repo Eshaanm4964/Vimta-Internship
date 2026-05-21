@@ -27,16 +27,19 @@ from database import (
     get_machine_types, create_machine_type, create_machine_field,
     get_lims_config, save_lims_config, update_reading_lims_status, get_lims_push_log,
 )
-from extractor import extract_from_image
 from machine_router import list_labs, list_machines, get_machine_by_id
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-init_db()
-seed_initial_data()
+
+try:
+    init_db()
+    seed_initial_data()
+except Exception as _e:
+    print(f"[startup] DB init warning: {_e}")
 
 
 def allowed_file(filename):
@@ -156,7 +159,7 @@ def api_extract():
         return jsonify({"error": f"Failed to save file: {str(e)}"}), 500
 
     try:
-        # Add timeout protection for the entire extraction process
+        from extractor import extract_from_image
         print(f"Starting extraction for machine: {machine_id}")
         result = extract_from_image(path, selected_lab_no=lab_no, selected_machine_id=machine_id)
         print(f"Extraction result: {result}")
