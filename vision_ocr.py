@@ -40,13 +40,22 @@ def _build_prompt(machine_type: str, fields: list, units: dict) -> str:
     for f in fields:
         example[f] = "10:00" if f == "time_value" else 0
     return (
-        f"You are reading a lab instrument display photo.\n"
+        f"You are a lab instrument OCR system. Your job is to read numeric values "
+        f"shown on a {machine_type} instrument display panel.\n\n"
+        f"Look carefully at ALL digits, LCD segments, LED numbers, and display screens "
+        f"in the image. Even if the image shows the full machine, locate and read the "
+        f"display panel section.\n\n"
         f"Extract these readings:\n" + "\n".join(field_lines) + "\n\n"
-        f"Return ONLY a JSON object. Keys must match exactly. "
-        f"Values are numbers (int/float). Time fields use 'MM:SS' string. "
-        f"Use null if a value is not clearly visible. No units in values.\n"
+        f"Rules:\n"
+        f"- Return ONLY a valid JSON object, no explanation text\n"
+        f"- Keys must match exactly as listed above\n"
+        f"- Values must be numbers (int or float)\n"
+        f"- Time fields use 'MM:SS' string format\n"
+        f"- If a field is clearly not shown on this instrument type, use null\n"
+        f"- If a number is partially visible, give your best estimate\n"
+        f"- Do NOT include units in values\n\n"
         f"Machine type: {machine_type}\n"
-        f"Example: {json.dumps(example)}"
+        f"Example output: {json.dumps(example)}"
     )
 
 

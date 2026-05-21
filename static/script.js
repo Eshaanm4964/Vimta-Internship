@@ -579,7 +579,13 @@ async function extractValues() {
     currentExtraction = data;
     currentExtraction.image_path = data.image_url || data.image_path;
     fillForm(data);
-    setMessage("✅ Extraction complete — review values below before saving.");
+    const readings = data.readings || {};
+    const hasValues = Object.values(readings).some(v => v !== null && v !== undefined && v !== "");
+    if (hasValues) {
+      setMessage("✅ Extraction complete — review values below before saving.");
+    } else {
+      setMessage("⚠️ Could not read display values from this photo. Please enter values manually, or retake the photo closer to the display panel.", true);
+    }
   } catch (err) {
     if (err.name === "AbortError") setMessage("Extraction timed out. Try a smaller or clearer image.", true);
     else setMessage("Extraction failed — check the backend terminal for details.", true);
